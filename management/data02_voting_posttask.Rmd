@@ -1,0 +1,103 @@
+---
+title: "Data prep script 2: Cleaning voting and post-task questionnaire data for Island Getaway Preschool Depression Study Wave T20"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+This script cleans the voting and post-task questionnaire data from the Island Getaway task run in T20 wave of the PDS study. This includes calculating composite scores for the questionnaire and the proportion of votes to Keep/Kick out coplayers during the task.
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+```{r}
+     set.seed(8675309)    #Set seed
+```
+
+## 1.5 Load Data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      base::load(file = "./data/DISS_cleaning02_q.RData")   
+      DISS_cleaning03_q <- DISS_cleaning02_q  ## first create new data
+      rm("DISS_cleaning02_q")             ## remove old data
+      
+      base::load(file = "./data/DISS_cleaning02_v.RData")   
+      DISS_cleaning03_v <- DISS_cleaning02_v  ## first create new data
+      rm("DISS_cleaning02_v")             ## remove old data
+```
+
+## 1.6 Aggregate post-task questionnaire responses
+```{r}
+DISS_cleaning03_q$r <- as.integer(DISS_cleaning03_q$r) #make into an integer
+DISS_cleaning03_q <- DISS_cleaning03_q %>%
+  mutate(r_new = ifelse(qn<3, 6-r, r)) #reverse score appropriate items
+
+tapply(DISS_cleaning03_q$r_new, DISS_cleaning03_q$subscale, function(x) c(mean(x, na.rm=T), sd(x, na.rm=T))) #get the mean and sd for each dimension in the questionnaire
+
+DISS_cleaning03_q <- as.data.frame(t(tapply(DISS_cleaning03_q$r_new, DISS_cleaning03_q[,c("subscale","s")], function(x) mean(x, na.rm=T))))
+DISS_cleaning03_q$Subid <- as.integer(row.names(DISS_cleaning03_q))
+names(DISS_cleaning03_q) <- gsub(" ", "_", names(DISS_cleaning03_q))
+names(DISS_cleaning03_q) <- gsub("-", "_", names(DISS_cleaning03_q))
+```
+
+## 1.7 Aggregate voting responses (Keep/Stay, Kick out)
+```{r}
+DISS_cleaning03_v$Subid <- as.integer(DISS_cleaning03_v$s)
+DISS_cleaning03_v2 <- DISS_cleaning03_v %>%
+  group_by(Subid) %>%
+  count(vote=="Kick") %>%
+  spread(`vote == "Kick"`, n) %>%
+  rename(Kick = "TRUE",
+         Keep = "FALSE") %>%
+  mutate(Keep_prop = Keep/51,
+         Kick_prop = Kick/51)
+
+DISS_cleaning03_vq <- Reduce(function(x,y) merge(x,y,by="Subid",all=FALSE), list(DISS_cleaning03_q, DISS_cleaning03_v2)) #merge the two datasets
+```
+
+# 2 Save data
+```{r}
+save(DISS_cleaning03_vq, file="./data/DISS_cleaning03_vq.RData")
+```
+
+# 3 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

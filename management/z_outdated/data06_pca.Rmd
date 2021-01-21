@@ -1,0 +1,213 @@
+---
+title: "Data prep script 6: Importing ERP PCA data and calculating residual scores"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer. See manuscript for further details on preprocessing procedures.
+Principle component analysis of ERP data was conducted in MATLAB using the EP Toolkit package (Dien, 1999).
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(8675309)    #Set seed
+```
+
+## 1.5 Load Data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+#Full sample
+DISS_cleaning_T1S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF01SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T1S2 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF01SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T1S3 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF01SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S1_eFz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF02SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S2 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF02SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S3 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF02SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF03SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S2 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF03SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S3_ePz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF03SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T4S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF04SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T4S2 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF04SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S1_eCz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF05SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S2 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF05SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S3 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF05SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF06SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S2_ePz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF06SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S3 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF06SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T7S1_eCz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF07SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T8S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF08SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T8S2_ePz <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF08SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T9S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF09SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T10S1 <- read.table("data/PCA_data/full_sample/DISS_PCA_IG_T20-TF10SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+
+factors_full <- c("DISS_cleaning_T1S1","DISS_cleaning_T1S2","DISS_cleaning_T1S3","
+DISS_cleaning_T2S1_eFz","DISS_cleaning_T2S2","DISS_cleaning_T2S3","
+DISS_cleaning_T3S1","DISS_cleaning_T3S2","DISS_cleaning_T3S3_ePz","
+DISS_cleaning_T4S1","DISS_cleaning_T4S2","
+DISS_cleaning_T5S1_eCz","DISS_cleaning_T5S2","DISS_cleaning_T5S3","
+DISS_cleaning_T6S1","DISS_cleaning_T6S2_ePz","DISS_cleaning_T6S3","
+DISS_cleaning_T7S1_eCz","
+DISS_cleaning_T8S1","DISS_cleaning_T8S2_ePz","
+DISS_cleaning_T9S1","
+DISS_cleaning_T10S1")
+
+ttest_results_full <- data.frame(matrix(nrow=22,ncol=3))
+colnames(ttest_results_full) <- c("Factor","T","P")
+i=1
+for (f in factors_full){
+  ttest_results_full[i,1] <- f
+  ttest_results_full[i,2] <- eval(parse(text=paste0("round(t.test(",f,"$Acc, ", f, "$Rej, paired=TRUE)$statistic,3)")))
+  ttest_results_full[i,3] <- eval(parse(text=paste0("round(t.test(",f,"$Acc, ", f, "$Rej, paired=TRUE)$p.value,4)")))
+  i=i+1
+}
+
+#Without questionable subjects
+DISS_cleaning_T1S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF01SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T1S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF01SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T1S3_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF01SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S1_woq_eFz <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF02SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S2_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF02SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T2S3_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF02SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF03SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S2_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF03SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T3S3_woq_ePz <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF03SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T4S1_woq_eFz <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF04SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T4S2_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF04SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF05SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S2_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF05SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T5S3_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF05SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF06SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S2_woq_ePz <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF06SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T6S3_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF06SF3.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T7S1_woq_eCz <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF07SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T8S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF08SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T8S2_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF08SF2.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T9S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF09SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T10S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF10SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+DISS_cleaning_T12S1_woq <- read.table("data/PCA_data/wo_questionable/DISS_PCA_IG_T20_woquest-TF12SF1.txt", 
+                                     skip=8, sep='\t', col.names=c("Acc","Rej","Subid"))
+
+factors_woq <- c("DISS_cleaning_T1S1_woq","DISS_cleaning_T1S1_woq","DISS_cleaning_T1S3_woq","
+DISS_cleaning_T2S1_woq_eFz","DISS_cleaning_T2S2_woq","DISS_cleaning_T2S3_woq","
+DISS_cleaning_T3S1_woq","DISS_cleaning_T3S2_woq","DISS_cleaning_T3S3_woq_ePz","
+DISS_cleaning_T4S1_woq_eFz","DISS_cleaning_T4S2_woq","
+DISS_cleaning_T5S1_woq","DISS_cleaning_T5S2_woq","DISS_cleaning_T5S3_woq","
+DISS_cleaning_T6S1_woq","DISS_cleaning_T6S2_woq_ePz","DISS_cleaning_T6S3_woq","
+DISS_cleaning_T7S1_woq_eCz","
+DISS_cleaning_T8S1_woq","DISS_cleaning_T8S2_woq","
+DISS_cleaning_T9S1_woq","
+DISS_cleaning_T10S1_woq",
+"DISS_cleaning_T12S1_woq")
+
+ttest_results_woq <- data.frame(matrix(nrow=22,ncol=3))
+colnames(ttest_results_woq) <- c("Factor","T","P")
+i=1
+for (f in factors_woq){
+  ttest_results_woq[i,1] <- f
+  ttest_results_woq[i,2] <- eval(parse(text=paste0("round(t.test(",f,"$Acc, ", f, "$Rej, paired=TRUE)$statistic,3)")))
+  ttest_results_woq[i,3] <- eval(parse(text=paste0("round(t.test(",f,"$Acc, ", f, "$Rej, paired=TRUE)$p.value,4)")))
+  i=i+1
+}
+
+# save(DISS_cleaning02_q, file="./data/DISS_cleaning02_q.RData")
+# save(DISS_cleaning02_v, file="./data/DISS_cleaning02_v.RData")
+```
+
+## 1.6 Merge pca data with CRUNCH
+```{r}
+DISS_cleaning05 <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(DISS_cleaning05_crunch, DISS_cleaning05_hbq, DISS_cleaning05_beh))
+```
+
+# 2 Save Data
+```{r}
+save(DISS_cleaning05, file="./data/DISS_cleaning05.RData")
+```
+
+# 3 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

@@ -1,0 +1,130 @@
+---
+title: "Data prep script 3: Pulling needed symptom and demographic variables"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+This script imports the CRUNCH dataset and selects only the symptom and demographic variables to be used in further analyses.
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  # renv::restore()     #restore environment
+renv::restore()
+
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+```{r}
+     set.seed(8675309)    #Set seed
+```
+
+## 1.5 Load Data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_08_28_20.sav")
+crunch <- CRUNCH; rm(CRUNCH)
+```
+
+# 2. Calculate variables
+## 2.1. Remove subjects with IQ <70
+```{r}
+crunch$Subid <- as.integer(as.character(crunch$Subid))
+crunch <- crunch %>%
+  dplyr::filter(IQ>=70 | is.na(IQ))
+```
+
+## 2.2. If missing S5Income_to_Need pull from earlier waves
+```{r}
+crunch$Income_to_Need <- ifelse(is.na(crunch$S5Income_to_Need), crunch$S4Income_to_Need, crunch$S5Income_to_Need)
+crunch$Income_to_Need <- ifelse(is.na(crunch$Income_to_Need), crunch$S3Income_to_Need, crunch$Income_to_Need)
+crunch$Income_to_Need <- ifelse(is.na(crunch$Income_to_Need), crunch$S2Income_to_Need, crunch$Income_to_Need)
+crunch$Income_to_Need <- ifelse(is.na(crunch$Income_to_Need), crunch$S1Income_to_Need, crunch$Income_to_Need)
+```
+
+## 2.3. Remove unneeded variables
+```{r}
+demog <- c("Subid","sex","T20age","ethin","PDSIII_Race","PDSIII_Race_other","PDSIII_Hispanic",
+           "Income_to_Need",
+           "S5psychmed","S5psychmed_dos")
+symptoms <- c("S5CDI2C_T","S5CDI2C_TT","S5CDI2P_T","S5CDI2P_TT","S5BDItotalscore",
+              "S5SIAS6_score","S5SPS6_score")
+
+DISS_cleaning04_crunch <- crunch %>%
+  dplyr::select(demog,symptoms,
+                matches('MDD|SOC'))
+```
+
+## Detect missing data
+```{r}
+DISS_cleaning04_crunch[!complete.cases(DISS_cleaning04_crunch$S5BDItotalscore),]
+
+DISS_cleaning04_crunch %>%
+     rowid_to_column() %>%
+     filter(is.na(S5BDItotalscore))
+
+sapply(DISS_cleaning04_crunch[,c], function(x) sum(is.na(x)))
+
+DISS_cleaning04_crunch %>%
+  filter(is.na(S5BDItotalscore) & is.na(S5CDI2C_T))
+mydata %>% 
+  filter(! is.na(important_a) | ! is.na(important_b))
+
+DISS_cleaning04_crunch[DISS_cleaning04_crunch$Subid,is.na(DISS_cleaning04_crunch$S5BDItotalscore) & is.na(DISS_cleaning04_crunch$S5CDI2C_T)]
+```
+
+## 2.4. Combine CDI/BDI and SIAS/SPS
+```{r}
+# Combine CDI and BDI
+DISS_cleaning04_crunch$S5bdi_perc <- (DISS_cleaning04_crunch$S5BDItotalscore/63)*100
+DISS_cleaning04_crunch$S5cdic_perc <- (DISS_cleaning04_crunch$S5CDI2C_T/56)*100
+DISS_cleaning04_crunch$S5cdic_bdi_perc <- DISS_cleaning04_crunch$S5cdic_perc
+DISS_cleaning04_crunch$S5cdic_bdi_perc[!is.na(DISS_cleaning04_crunch$S5bdi_perc)] <- DISS_cleaning04_crunch$S5bdi_perc[!is.na(DISS_cleaning04_crunch$S5bdi_perc)] 
+
+# Average SIAS-6 and SPS-6 together
+DISS_cleaning04_crunch$S5_SIASSPS <- rowMeans(DISS_cleaning04_crunch[,c("S5SIAS6_score","S5SPS6_score")])
+```
+
+# 3. Save new data
+```{r}
+save(DISS_cleaning04_crunch, file="./data/DISS_cleaning04_crunch.RData")
+```
+
+# 4. Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

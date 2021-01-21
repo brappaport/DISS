@@ -1,0 +1,97 @@
+---
+title: "Data prep script 7: Merging all data together"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    options(scipen = 999) #Disable scientific notation
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(8675309)    #Set seed
+```
+
+## 1.5 Load Data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      # Voting behavior and post-task questionnaire responses
+      load(file = "./data/DISS_cleaning03_vq.RData")   
+      DISS_cleaning07_beh <- DISS_cleaning03_vq  ## first create new data
+      rm("DISS_cleaning03_vq")             ## remove old data
+      
+      # Symptom measures
+      load(file = "./data/DISS_cleaning04_crunch.RData")   
+      DISS_cleaning07_crunch <- DISS_cleaning04_crunch  ## first create new data
+      rm("DISS_cleaning04_crunch")             ## remove old data
+      
+      # Peer relations measures
+      load(file = "./data/DISS_cleaning04_hbq.RData")   
+      DISS_cleaning07_hbq <- DISS_cleaning04_hbq  ## first create new data
+      rm("DISS_cleaning04_hbq")             ## remove old data
+      
+      # Reward/loss behavioral task (PILT)
+      load(file = "./data/DISS_cleaning05_pilt.RData")   
+      DISS_cleaning07_pilt <- DISS_cleaning05_pilt  ## first create new data
+      rm("DISS_cleaning05_pilt")             ## remove old data
+      
+      # ERP PCA component values
+      load(file = "./data/DISS_cleaning06_tw.RData")   
+      DISS_cleaning07_tw <- DISS_cleaning06_tw  ## first create new data
+      rm("DISS_cleaning06_tw")             ## remove old data
+      
+```
+
+## 1.6 Merge Behavioral data with CRUNCH
+```{r}
+DISS_cleaning07 <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(DISS_cleaning07_crunch, DISS_cleaning07_hbq, DISS_cleaning07_beh, DISS_cleaning07_pilt, DISS_cleaning07_tw))
+```
+
+# 2 Save Data
+```{r}
+save(DISS_cleaning07, file="./data/DISS_cleaning07.RData")
+```
+
+# 3 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

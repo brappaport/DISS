@@ -1,0 +1,398 @@
+---
+title: "Analysis script 1"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+These are the primary analyses for Brent Rappaport's doctoral dissertation thesis: "Behavioral, neural, and psychiatric correlates of response to social feedback."
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    options(scipen = 999) #Disable scientific notation
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(MASS)       #runs robust linear models
+  library(sfsmisc)    #run robust F-test for linear models
+  library(MissMech)   #test of MCAR
+  library(brms)       #run Bayes multiple regression analyses
+  library(naniar)     #handle missingness
+  library(mice)       #multiple imputation
+  library(miceadds)   #adding functions to mice
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(919)    #Set seed
+```
+
+## 1.5. Load data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      load(file = "./data/DISS_cleaning07.RData")   
+      DISS_do01_full <- DISS_cleaning07  ## first create new data
+      rm("DISS_cleaning07")             ## remove old data
+      
+      load(file = "./data/DISS_cleaning06_pca.RData")
+      DISS_do02_grandaverage <- DISS_cleaning06_pca
+      rm("DISS_cleaning06_pca")
+```      
+
+## 1.6. Subset data
+```{r}
+measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
+factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
+
+for (f in factors_list){ 
+    eval(parse(text=paste0("DISS_do01_full$",f,"_f <- with(DISS_do01_full, as.factor(",f,"))"))) 
+}
+
+contrasts(DISS_do01_full$sex_f) <- contr.sum(2)
+contrasts(DISS_do01_full$PDSIII_Race_f) <- contr.sum(3)
+contrasts(DISS_do01_full$PDSIII_Hispanic_f) <- contr.sum(2)
+contrasts(DISS_do01_full$S5psychmed_dos_f) <- contr.sum(2)
+
+DISS_do01 <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
+    drop_na(rewp_r, T20age) %>%
+    dplyr::select(c(Subid, all_of(measures_list), paste0(factors_list[1:3],"_f")))
+```
+
+# 2. Make and plot grand averages
+## 2.1. Calculate grand averages
+```{r}
+# Drop unneeded columns and add Time variable
+DISS_do02_grandaverage_time <- DISS_do02_grandaverage %>%
+  dplyr::select(-Filename) %>% #remove 'Filename' variable
+  mutate(Time=rep(seq(-200,799,2),234)) %>% #create Time variable from -200 to 798 by intervals of 2ms
+  dplyr::select(Subid,Condition,Time,everything()) %>% #rearrange data to put Subid, Condition, and Time first
+  filter(Time>0) %>% #remove data from pre-stimulus interval (-200 to 0ms)
+  arrange(Subid,Condition,Time) %>% #sort by Subid, Condition, and then Time
+  group_by(Condition,Time) %>% #grouping required for summarise in the next step
+  dplyr::summarise(Cz_ga = mean(Cz),
+                   FC2_ga = mean(FC2)) %>% #calculate mean across subjects
+  pivot_wider(id_cols=Time, names_from=Condition, values_from=c(Cz_ga,FC2_ga)) #Make data into wide format
+
+DISS_do02_grandaverage_time$Cz_ga_resid <- stdres(lm(Cz_ga_ACC ~ Cz_ga_REJ, DISS_do02_grandaverage_time, na.action=na.exclude))
+DISS_do02_grandaverage_time$FC2_ga_resid <- stdres(lm(FC2_ga_ACC ~ FC2_ga_REJ, DISS_do02_grandaverage_time, na.action=na.exclude))
+```
+
+## 2.2. Make grand average waveforms
+```{r}
+ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid")], Type, Feedback, -Time), aes(x=Time, y=Feedback, color=Type)) +
+  geom_line(size=1.5) +
+  geom_rect(aes(xmin=0, xmax=0, ymin=-4, ymax=11), color="black") +
+  geom_rect(aes(xmin=-200, xmax=800, ymin=0, ymax=0), color="black") +
+  geom_rect(aes(xmin=294, xmax=394, ymin=-4, ymax=11), fill="grey", alpha=.01, color="white") +
+  annotate(geom="text", x=344, y=11.4, label="RewP", color="black", size=8) +
+  scale_color_manual(breaks=c("Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid"),
+                     values=c("Cz_ga_ACC"="green", "Cz_ga_resid"="black", "Cz_ga_REJ"="red"), 
+                     labels=c("Acceptance","Rejection","Difference"), name=NULL) +
+  labs(x="Time (ms)", y="Average Cz activity (µV)") +
+  scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
+  scale_y_continuous(limits=c(-4,11.5), breaks = seq(-4, 11.5, by = 2)) +
+  theme_bw() +
+  theme(legend.position = c(0.2, 0.8), legend.text=element_text(size=20), legend.key.size = unit(1.5, 'lines'),
+        axis.text=element_text(size=18),
+        axis.title=element_text(size=23,face="bold"),
+        plot.margin=unit(c(.5,.2,.5,.8), "cm"))
+  ggsave("/Users/brentrappaport/Box Sync/WashU/Research/DISS/work/figures/Figure_2.png", width = 10.5, height = 6.5)
+```
+
+## 3. Missing data
+```{r}
+sum(complete.cases(DISS_do01$rewp_r)) #number of participants that completed IG with good data
+
+DISS_do01 %>%
+  dplyr::select(c(measures_list,paste0(factors_list[1:3],"_f"))) %>%
+  miss_var_summary(order=FALSE)
+
+vis_miss(DISS_do01[,c(measures_list,factors_list)])
+```
+N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BDI/CDI measure (Subids: 100,101,121,199,584), 0 missing SIAS/SPS, 16 missing PILT, 9 missing DOS psychotropic medication use.
+
+## 3.1. Multiple imputation
+### 3.1.1. Test MCAR
+```{r}
+TestMCARNormality(DISS_do01, imputation.number=5, imputation.method="Dist.Free", seed=314)
+```
+
+## 3.1.2. Run multiple imputation
+```{r}
+md.pattern(DISS_do01[,c(1:12)])
+DISS_do01.imp <- mice(DISS_do01[,c(1:12)], m = 5, method = 'pmm', seed=314) #generate 5 imputed datasets
+summary(DISS_do01.imp)
+
+DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
+
+DISS_do01.comp$Reward_bias_20.NA <- cci(DISS_do01$Reward_bias_20)
+DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01$Loss_bias_20)
+DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
+
+ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20, color = Reward_bias_20.NA)) + 
+  geom_jitter(show.legend = FALSE, width = .1)
+
+ggplot(DISS_do01.comp, aes(x = .imp, y = Loss_bias_20, color = Loss_bias_20.NA)) + 
+  geom_jitter(show.legend = FALSE, width = .1)
+
+ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc, color = S5cdic_bdi_perc.NA)) + 
+  geom_jitter(show.legend = FALSE, width = .1)
+```
+
+# 4. Standardize measures
+```{r}
+#convert into datlist
+DISS_do01.dat <- miceadds::mids2datlist(DISS_do01.imp)
+#scale datlist
+DISS_do01.dat_z <- scale_datlist(datlist=DISS_do01.dat, orig_var=measures_list, trafo_var=paste0(measures_list,"_z"), weights=NULL, M=0, SD=1, digits=NULL)
+#convert back to mids
+DISS_do01.imp_z <- miceadds::datlist2mids(DISS_do01.dat_z)
+
+for (m in measures_list){
+ eval(parse(text=paste0("DISS_do01$",m,"_z <- scale(DISS_do01$",m,", center=T, scale=T)")))
+}
+
+save(DISS_do01, file="./data/DISS_do01.RData")
+```
+
+
+# 5. Primary confirmatory analyses
+## 5.1. Aim 1: Relationship between RewP/FN and PILT-P/N
+### 5.1.1. Zero-order correlations
+```{r}
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Loss_bias_20_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Loss_bias_20_z))))
+```
+
+### 5.1.2. Multiple regression (frequentist)
+```{r}
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+```
+
+#### 4.1.1. RewP/PILT-Bayes
+```{r}
+mr.rewp_pilt <- brm(family = gaussian, 
+    rewp_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=Reward_bias_20_z),
+              prior(normal(0,2), class=b, coef=Loss_bias_20_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.rewp_pilt")
+summary(mr.rewp_pilt)
+
+plot(mr.rewp_pilt)
+conditional_effects(mr.rewp_pilt)
+pp_check(mr.rewp_pilt, nsamples=20)
+```
+
+### 4.1.2. FN/PILT-Bayes
+```{r}
+mr.fn_pilt <- brm(family = gaussian, 
+    fn_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=Reward_bias_20_z),
+              prior(normal(0,2), class=b, coef=Loss_bias_20_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.fn_pilt")
+summary(mr.fn_pilt)
+
+plot(mr.fn_pilt)
+conditional_effects(mr.fn_pilt)
+pp_check(mr.fn_pilt, nsamples=20)
+```
+
+## 4.2. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
+```{r}
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+corr.test(DISS_do01$rewp_r, DISS_do01$S5cdic_bdi_perc_z, use="complete")
+corr.test(DISS_do01$fn_r_z, DISS_do01$S5_SIASSPS_z, use="complete")
+```
+
+#### 4.1.1. RewP/Sym-Bayes
+```{r}
+mr.rewp_sym <- brm(family = gaussian, 
+    rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.rewp_sym")
+summary(mr.rewp_sym)
+
+plot(mr.rewp_sym)
+conditional_effects(mr.rewp_sym)
+pp_check(mr.rewp_sym, nsamples=20)
+```
+
+### 4.1.2. FN/Sym-Bayes
+```{r}
+mr.fn_sym <- brm(family = gaussian, 
+    fn_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.fn_sym")
+summary(mr.fn_sym)
+
+plot(mr.fn_sym)
+conditional_effects(mr.fn_sym)
+pp_check(mr.fn_sym, nsamples=20)
+```
+
+## 4.3. Aim 3: Relationship between PILT and Depression/Social Anxiety
+```{r}
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Reward_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Reward_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+```
+
+#### 4.1.1. PILTP/Sym-Bayes
+```{r}
+mr.piltp_sym <- brm(family = gaussian, 
+    Reward_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.piltp_sym")
+summary(mr.piltp_sym)
+
+plot(mr.piltp_sym)
+conditional_effects(mr.piltp_sym)
+pp_check(mr.piltp_sym, nsamples=20)
+```
+
+### 4.1.2. PILTN/Sym-Bayes
+```{r}
+mr.piltn_sym <- brm(family = gaussian, 
+    Loss_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01,
+    file="./analysis/mr.piltn_sym")
+summary(mr.piltn_sym)
+
+plot(mr.piltn_sym)
+conditional_effects(mr.piltn_sym)
+pp_check(mr.piltn_sym, nsamples=20)
+```
+
+
+
+# #. Supplemental analyses
+
+
+# 3.0 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

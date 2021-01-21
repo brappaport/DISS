@@ -1,0 +1,104 @@
+---
+title: "Follow-up analyses to Rappaport et al., 2019 from Frontiers"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+These are follow-up analsyes to the Rappaport et al., 2019 manuscript that investigated relationships between peer victimization and response to social and monetary rewards/losses in a subset of the total sample. These analyses represent the same analyses for the social task (Island Getaway) but with the entire full sample.
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  getwd()
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(8675309)    #Set seed
+```
+
+## 1.5 Load Data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      load(file = "./data/wf_cleaning01.RData")   
+      wf_cleaning02 <- wf_cleaning01  ## first create new data
+      rm("wf_cleaning01")             ## remove old data
+```
+
+# 2. Regressions
+## 2.1. Voting behavior during IG & Peer Victimization
+```{r}
+#Early peer victimization  
+summary(rlm(Keep_prop ~ PPr_Avg_early, DISS_do01))[4]; 
+round(f.robftest(rlm(Keep_prop ~ PPr_Avg_early, DISS_do01), var = "PPr_Avg_early")$p.value,3); 
+round(confint.default(rlm(Keep_prop ~ PPr_Avg_early, DISS_do01))[2,],3)
+
+ggplot(DISS_do01, aes(x=PPr_Avg_early, y=Keep_prop)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE)
+
+  ## With age, sex, race covariates
+  summary(rlm(Keep_prop ~ PPr_Avg_early + sex + T20age + PDSIII_Race, DISS_do01))[4]; 
+  round(f.robftest(rlm(Keep_prop ~ PPr_Avg_early + sex + T20age + PDSIII_Race, DISS_do01), var = "PPr_Avg_early")$p.value,3); 
+  round(confint.default(rlm(Keep_prop ~ PPr_Avg_early + sex + T20age + PDSIII_Race, DISS_do01))[2,],3)
+  
+#Recent peer victimization  
+summary(rlm(Keep_prop ~ T18hbqhPRr, DISS_do01))[4]; 
+round(f.robftest(rlm(Keep_prop ~ T18hbqhPRr, DISS_do01), var = "T18hbqhPRr")$p.value,3); 
+round(confint.default(rlm(Keep_prop ~ T18hbqhPRr, DISS_do01))[2,],3)
+
+  ## With covariates
+  summary(rlm(Keep_prop ~ T18hbqhPRr + sex + T20age + PDSIII_Race, DISS_do01))[4]; 
+  round(f.robftest(rlm(Keep_prop ~ T18hbqhPRr + sex + T20age + PDSIII_Race, DISS_do01), var = "T18hbqhPRr")$p.value,3); 
+  round(confint.default(rlm(Keep_prop ~ T18hbqhPRr + sex + T20age + PDSIII_Race, DISS_do01))[2,],3)
+  
+ggplot(DISS_do01, aes(x=T18hbqhPRr, y=Keep_prop)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE)
+```
+
+# 2 Save Data
+```{r}
+save(object, file="./data/FILENAME.RData")
+```
+
+# 3 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

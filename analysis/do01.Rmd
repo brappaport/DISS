@@ -43,6 +43,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(mice)       #multiple imputation
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
+  library(pander)     #make nice tables
   library(workflowr)  #helps with workflow
 ```
 
@@ -200,8 +201,7 @@ save(DISS_do01.imp_z, file="./data/DISS_do01.imp_z.RData")
 
 
 # 5. Primary confirmatory analyses
-## 5.1. Aim 1: Relationship between RewP/FN and PILT-P/N
-### 5.1.1. Zero-order correlations
+### 5.1. Zero-order correlations
 ```{r}
 zero_order_cor <- micombine.cor(DISS_do01.imp_z, variables=c("rewp_r_z","fn_r_z",
                                           "Reward_bias_20_z","Loss_bias_20_z",
@@ -213,35 +213,38 @@ zero_order_cor_star <- zero_order_cor %>%
   mutate(r_new=case_when(p<.01~paste0(r,"**"), p<.05~paste0(r,"*"), TRUE~paste0(r))) %>%
   select(variable1,variable2,r_new,p,r)
 
-zero_order_r <- attr(zero_order_cor, "r_matrix")
-zero_order_rse <- attr(zero_order_cor, "rse_matrix")
+zero_order_r <- round(attr(zero_order_cor, "r_matrix"),3)
+zero_order_rse <- round(attr(zero_order_cor, "rse_matrix"),3)
 
 zero_order_matrix <- matrix(NA, nrow=6, ncol=6)
 zero_order_matrix[upper.tri(zero_order_matrix)] <- zero_order_r[upper.tri(zero_order_r)]
 zero_order_matrix[lower.tri(zero_order_matrix)] <- zero_order_rse[lower.tri(zero_order_rse)]
 row.names(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
 colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
+write.csv(x=as.data.frame(zero_order_matrix), file="./tables/Correlations.csv", row.names=TRUE)
 ```
 
+## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
 ### 5.1.2. Multiple regression
 ```{r}
 summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-
 summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
 
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 
 summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
 
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 ```
 
 ### 5.1.3. RewP/PILT-Bayes
 ```{r}
-mr.rewp_pilt <- brm(family = gaussian, 
+library(future)
+plan(multicore)
+mr.rewp_pilt <- brm_multiple(family = gaussian, 
     rewp_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=Reward_bias_20_z),
@@ -253,9 +256,10 @@ mr.rewp_pilt <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
-    iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    iter=5000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.rewp_pilt")
+mr.rewp_pilt$rhats
 summary(mr.rewp_pilt)
 
 plot(mr.rewp_pilt)
@@ -265,7 +269,8 @@ pp_check(mr.rewp_pilt, nsamples=20)
 
 ### 5.1.4. FN/PILT-Bayes
 ```{r}
-mr.fn_pilt <- brm(family = gaussian, 
+plan(multicore)
+mr.fn_pilt <- brm_multiple(family = gaussian, 
     fn_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=Reward_bias_20_z),
@@ -277,9 +282,10 @@ mr.fn_pilt <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
-    iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    iter=5000, warmup=1000, chains=4, cores=2,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.fn_pilt")
+mr.fn_pilt$rhats; colMeans(mr.fn_pilt$rhats)
 summary(mr.fn_pilt)
 
 plot(mr.fn_pilt)
@@ -288,15 +294,6 @@ pp_check(mr.fn_pilt, nsamples=20)
 ```
 
 ## 5.2. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
-### 5.2.1. Zero-order correlations
-```{r}
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z))))
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5_SIASSPS_z))))
-
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z))))
-summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ S5_SIASSPS_z))))
-```
-
 ### 5.2.2. Multiple regression
 ```{r}
 summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
@@ -311,7 +308,7 @@ corr.test(DISS_do01$fn_r_z, DISS_do01$S5_SIASSPS_z, use="complete")
 
 ### 5.2.3. RewP/Sym-Bayes
 ```{r}
-mr.rewp_sym <- brm(family = gaussian, 
+mr.rewp_sym <- brm_multiple(family = gaussian, 
     rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
@@ -324,18 +321,58 @@ mr.rewp_sym <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
     iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.rewp_sym")
 summary(mr.rewp_sym)
 
 plot(mr.rewp_sym)
 conditional_effects(mr.rewp_sym)
 pp_check(mr.rewp_sym, nsamples=20)
+
+#Correlation
+f1 <- 
+  brm_multiple(data = DISS_do01.imp_z, 
+      family = gaussian,
+      rewp_r_z ~ 1 + S5cdic_bdi_perc_z,
+      prior = c(prior(normal(0, 1), class = Intercept),
+                prior(normal(0, 1), class = b),
+                prior(normal(0, 1), class = sigma)),
+      chains = 4, cores = 4, 
+      seed = 919)
+summary(f1)
+
+cor.rewp_sym <- brm_multiple(data = DISS_do01.imp_z, 
+      family = gaussian,
+      mvbind(rewp_r_z, S5cdic_bdi_perc_z) ~ 1,
+      prior = c(prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 100), class = sigma, resp = rewp_r_z),
+                prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
+                prior(lkj(1), class = rescor)),
+      iter = 5000, warmup = 1000, chains = 4, cores = 2, 
+      seed = 919)
+
+cor.rewp_sym <- brm_multiple(data = DISS_do01.imp_z, 
+      family = student,
+      mvbind(rewp_r_z, S5cdic_bdi_perc_z) ~ 1,
+      prior = c(prior(gamma(2, .1), class = nu),
+                prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 100), class = sigma, resp = rewp_r_z),
+                prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
+                prior(lkj(1), class = rescor)),
+      iter = 2000, warmup = 500, chains = 4, cores = 2, 
+      seed = 919)
+
+cor_test <- stan(file="robust_correlation.stan", data=DISS_do01.imp_z, 
+                 iter=2000, warmup=500, chains=4, seed=919)
+
+ggplot(DISS_do01.imp_z, aes(y=rewp_r_z, x=S5cdic_bdi_perc_z)) +
+  geom_point()
+
 ```
 
 ### 5.2.4 FN/Sym-Bayes
 ```{r}
-mr.fn_sym <- brm(family = gaussian, 
+mr.fn_sym <- brm_multiple(family = gaussian, 
     fn_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
@@ -348,7 +385,7 @@ mr.fn_sym <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
     iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.fn_sym")
 summary(mr.fn_sym)
 
@@ -384,7 +421,7 @@ summary(pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_block2 ~ S5cdic_bdi
 
 ### 5.3.3. PILTP/Sym-Bayes
 ```{r}
-mr.piltp_sym <- brm(family = gaussian, 
+mr.piltp_sym <- brm_multiple(family = gaussian, 
     Reward_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
@@ -397,7 +434,7 @@ mr.piltp_sym <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
     iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.piltp_sym")
 summary(mr.piltp_sym)
 
@@ -408,7 +445,7 @@ pp_check(mr.piltp_sym, nsamples=20)
 
 ### 5.3.4. PILTN/Sym-Bayes
 ```{r}
-mr.piltn_sym <- brm(family = gaussian, 
+mr.piltn_sym <- brm_multiple(family = gaussian, 
     Loss_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
@@ -421,7 +458,7 @@ mr.piltn_sym <- brm(family = gaussian,
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
     iter=2000, warmup=1000, chains=4, cores=2,
-    data=DISS_do01,
+    data=DISS_do01.imp_z,
     file="./analysis/mr.piltn_sym")
 summary(mr.piltn_sym)
 

@@ -1,5 +1,5 @@
 ---
-title: "Analysis script 1"
+title: "Analysis script 2: Frequentist analysis of confirmatory analyses"
 author: "Brent Rappaport"
 date: "`r format(Sys.time(),  '%Y-%m-%d')`"
 output:
@@ -20,7 +20,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
     options(scipen = 999) #Disable scientific notation
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -35,7 +35,6 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(expss)      #labeling variables/values
   library(psych)      #used for statistical analyses
   library(ggplot2)    #creates plots
-  library(brms)       #run Bayes multiple regression analyses
   library(mice)       #multiple imputation
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
@@ -66,8 +65,8 @@ Remember to immediately rename and remove. Avoid overwriting old data.
       rm("DISS_do01.imp_z")
 ```      
 
-# 5. Primary confirmatory analyses
-### 5.1. Zero-order correlations
+# 2. Primary confirmatory analyses
+### 2.1. Zero-order correlations
 ```{r}
 zero_order_cor <- micombine.cor(DISS_do02.imp_z, variables=c("rewp_r_z","fn_r_z",
                                           "Reward_bias_20_z","Loss_bias_20_z",
@@ -90,54 +89,50 @@ colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "De
 zero_order_matrix
 write.csv(x=as.data.frame(zero_order_matrix), file="./tables/Correlations.csv", row.names=TRUE)
 ```
+The upper diagonal is the r's, the lower diagonal is the rse's.
 
-## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
-#### 5.2.1. Multiple regression
+## 2.2. Aim 1: Relationship between RewP/FN and PILT-P/N
 ```{r}
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
 
-# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+```
+#### 2.2.1. Separate by block of PILT
+```{r}
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 
 # summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 # summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 ```
 
-## 5.3. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
-#### 5.3.1. Multiple regression
+## 2.3. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
 ```{r}
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
 
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
-
-corr.test(DISS_do02$rewp_r, DISS_do02$S5cdic_bdi_perc_z, use="complete")
-corr.test(DISS_do02$fn_r_z, DISS_do02$S5_SIASSPS_z, use="complete")
 ```
 
-## 5.4. Aim 3: Relationship between PILT and Depression/Social Anxiety
-#### 5.4.1. Multiple regression
+## 2.4. Aim 3: Relationship between PILT and Depression/Social Anxiety
 ```{r}
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic))))
-
-summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
-summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f))))
 
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+```
+#### 2.4.1. Separate by block of PILT
+```{r}
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 ```
-
-# #. Supplemental analyses
-
 
 # 3.0 Closing out
   In this step, go ahead and close out of the file and quit R without saving  

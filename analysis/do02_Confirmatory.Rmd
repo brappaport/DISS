@@ -1,0 +1,148 @@
+---
+title: "Analysis script 1"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+These are the primary analyses for Brent Rappaport's doctoral dissertation thesis: "Behavioral, neural, and psychiatric correlates of response to social feedback."
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    options(scipen = 999) #Disable scientific notation
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(brms)       #run Bayes multiple regression analyses
+  library(mice)       #multiple imputation
+  library(miceadds)   #adding functions to mice
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(pander)     #make nice tables
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(919)    #Set seed
+```
+
+## 1.5. Load data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      load(file = "./data/DISS_do01.RData")   
+      DISS_do02 <- DISS_do01  ## first create new data
+      rm("DISS_do01")             ## remove old data
+      
+      load(file = "./data/DISS_do01.imp_z.RData")
+      DISS_do02.imp_z <- DISS_do01.imp_z
+      rm("DISS_do01.imp_z")
+```      
+
+# 5. Primary confirmatory analyses
+### 5.1. Zero-order correlations
+```{r}
+zero_order_cor <- micombine.cor(DISS_do02.imp_z, variables=c("rewp_r_z","fn_r_z",
+                                          "Reward_bias_20_z","Loss_bias_20_z",
+                                          "S5cdic_bdi_perc_z","S5_SIASSPS_z"), 
+              conf.level=0.95, method="pearson", nested=FALSE, partial=NULL) %>%
+  mutate_if(is.numeric, round, 3)
+
+zero_order_cor_star <- zero_order_cor %>%
+  mutate(r_new=case_when(p<.01~paste0(r,"**"), p<.05~paste0(r,"*"), TRUE~paste0(r))) %>%
+  select(variable1,variable2,r_new,p,r)
+
+zero_order_r <- round(attr(zero_order_cor, "r_matrix"),3)
+zero_order_rse <- round(attr(zero_order_cor, "rse_matrix"),3)
+
+zero_order_matrix <- matrix(NA, nrow=6, ncol=6)
+zero_order_matrix[upper.tri(zero_order_matrix)] <- zero_order_r[upper.tri(zero_order_r)]
+zero_order_matrix[lower.tri(zero_order_matrix)] <- zero_order_rse[lower.tri(zero_order_rse)]
+row.names(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
+colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
+zero_order_matrix
+write.csv(x=as.data.frame(zero_order_matrix), file="./tables/Correlations.csv", row.names=TRUE)
+```
+
+## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
+#### 5.2.1. Multiple regression
+```{r}
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block1 + Loss_bias_20_block1 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+# summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_block2 + Loss_bias_20_block2 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+```
+
+## 5.3. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
+#### 5.3.1. Multiple regression
+```{r}
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+corr.test(DISS_do02$rewp_r, DISS_do02$S5cdic_bdi_perc_z, use="complete")
+corr.test(DISS_do02$fn_r_z, DISS_do02$S5_SIASSPS_z, use="complete")
+```
+
+## 5.4. Aim 3: Relationship between PILT and Depression/Social Anxiety
+#### 5.4.1. Multiple regression
+```{r}
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_block1 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
+```
+
+# #. Supplemental analyses
+
+
+# 3.0 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

@@ -1,0 +1,261 @@
+---
+title: "Analysis script 1"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+These are the primary analyses for Brent Rappaport's doctoral dissertation thesis: "Behavioral, neural, and psychiatric correlates of response to social feedback."
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    options(scipen = 999) #Disable scientific notation
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(brms)       #run Bayes multiple regression analyses
+  library(mice)       #multiple imputation
+  library(miceadds)   #adding functions to mice
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(pander)     #make nice tables
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(919)    #Set seed
+```
+
+## 1.5. Load data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      load(file = "./data/DISS_do01.RData")   
+      DISS_do02 <- DISS_do01  ## first create new data
+      rm("DISS_do01")             ## remove old data
+      
+      load(file = "./data/DISS_do01.imp_z.RData")
+      DISS_do02.imp_z <- DISS_do01.imp_z
+      rm("DISS_do01.imp_z")
+```      
+
+# 5. Primary confirmatory analyses done with Bayes
+
+## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
+#### 5.2.1. Multiple regression
+```{r}
+library(future)
+plan(multicore)
+mr.rewp_pilt <- brm_multiple(family = gaussian, 
+    rewp_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=Reward_bias_20_z),
+              prior(normal(0,2), class=b, coef=Loss_bias_20_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=5000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.rewp_pilt")
+mr.rewp_pilt$rhats
+summary(mr.rewp_pilt)
+
+plot(mr.rewp_pilt)
+conditional_effects(mr.rewp_pilt)
+pp_check(mr.rewp_pilt, nsamples=20)
+```
+
+#### 5.2.4. FN/PILT-Bayes
+```{r}
+plan(multicore)
+mr.fn_pilt <- brm_multiple(family = gaussian, 
+    fn_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=Reward_bias_20_z),
+              prior(normal(0,2), class=b, coef=Loss_bias_20_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=5000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.fn_pilt")
+mr.fn_pilt$rhats; colMeans(mr.fn_pilt$rhats)
+summary(mr.fn_pilt)
+
+plot(mr.fn_pilt)
+conditional_effects(mr.fn_pilt)
+pp_check(mr.fn_pilt, nsamples=20)
+```
+
+## 5.3. Aim 2: Relationship between RewP/FN and Depression/Social Anxiety
+#### 5.3.1. Multiple regression
+```{r}
+mr.rewp_sym <- brm_multiple(family = gaussian, 
+    rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.rewp_sym")
+summary(mr.rewp_sym)
+
+plot(mr.rewp_sym)
+conditional_effects(mr.rewp_sym)
+pp_check(mr.rewp_sym, nsamples=20)
+
+#Correlation
+f1 <- 
+  brm_multiple(data = DISS_do02.imp_z, 
+      family = gaussian,
+      rewp_r_z ~ 1 + S5cdic_bdi_perc_z,
+      prior = c(prior(normal(0, 1), class = Intercept),
+                prior(normal(-0.1, 1), class = b),
+                prior(normal(0, 1), class = sigma)),
+      chains = 4, cores = 4, 
+      seed = 919)
+summary(f1)
+
+cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z, 
+      family = gaussian,
+      mvbind(rewp_r_z, S5cdic_bdi_perc_z) ~ 1,
+      prior = c(prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 100), class = sigma, resp = rewp_r_z),
+                prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
+                prior(lkj(1), class = rescor)),
+      iter = 5000, warmup = 1000, chains = 4, cores = 2, 
+      seed = 919)
+
+cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z, 
+      family = student,
+      mvbind(rewp_r_z, S5cdic_bdi_perc_z) ~ 1,
+      prior = c(prior(gamma(2, .1), class = nu),
+                prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 100), class = sigma, resp = rewp_r_z),
+                prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
+                prior(lkj(1), class = rescor)),
+      iter = 2000, warmup = 500, chains = 4, cores = 2, 
+      seed = 919)
+
+cor_test <- stan(file="robust_correlation.stan", data=DISS_do02.imp_z, 
+                 iter=2000, warmup=500, chains=4, seed=919)
+
+ggplot(DISS_do02.imp_z, aes(y=rewp_r_z, x=S5cdic_bdi_perc_z)) +
+  geom_point()
+
+```
+
+#### 5.3.4 FN/Sym-Bayes
+```{r}
+mr.fn_sym <- brm_multiple(family = gaussian, 
+    fn_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.fn_sym")
+summary(mr.fn_sym)
+
+plot(mr.fn_sym)
+conditional_effects(mr.fn_sym)
+pp_check(mr.fn_sym, nsamples=20)
+```
+
+## 5.4. Aim 3: Relationship between PILT and Depression/Social Anxiety
+#### 5.4.1. Multiple regression
+```{r}
+mr.piltp_sym <- brm_multiple(family = gaussian, 
+    Reward_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.piltp_sym")
+summary(mr.piltp_sym)
+
+plot(mr.piltp_sym)
+conditional_effects(mr.piltp_sym)
+pp_check(mr.piltp_sym, nsamples=20)
+```
+
+#### 5.4.3. PILTN/Sym-Bayes
+```{r}
+mr.piltn_sym <- brm_multiple(family = gaussian, 
+    Loss_bias_20_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=2000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    file="./analysis/mr.piltn_sym")
+summary(mr.piltn_sym)
+
+plot(mr.piltn_sym)
+conditional_effects(mr.piltn_sym)
+pp_check(mr.piltn_sym, nsamples=20)
+```
+

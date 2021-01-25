@@ -1,5 +1,5 @@
 ---
-title: "Analysis script 1"
+title: "Analysis script 3: Bayesian analysis of confirmatory analyses"
 author: "Brent Rappaport"
 date: "`r format(Sys.time(),  '%Y-%m-%d')`"
 output:
@@ -26,6 +26,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 
 ## 1.2. Load Libraries
 ```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
   library(knitr)      #allows rmarkdown files
   library(haven)      #helps import stata
   library(questionr)  #allows lookfor function
@@ -39,6 +40,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
   library(pander)     #make nice tables
+  library(future)     #parallel processing
   library(workflowr)  #helps with workflow
 ```
 
@@ -70,7 +72,6 @@ Remember to immediately rename and remove. Avoid overwriting old data.
 ## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
 #### 5.2.1. Multiple regression
 ```{r}
-library(future)
 plan(multicore)
 mr.rewp_pilt <- brm_multiple(family = gaussian, 
     rewp_r_z ~ 1 + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
@@ -127,8 +128,8 @@ pp_check(mr.fn_pilt, nsamples=20)
 mr.rewp_sym <- brm_multiple(family = gaussian, 
     rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
-              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
-              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(-0.1,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(-0.07,2), class=b, coef=S5_SIASSPS_z),
               prior(normal(0,2), class=b, coef=T20age_z),
               prior(normal(0,2), class=b, coef=sex_f1),
               prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
@@ -136,7 +137,7 @@ mr.rewp_sym <- brm_multiple(family = gaussian,
               prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
-    iter=2000, warmup=1000, chains=4, cores=2,
+    iter=5000, warmup=1000, chains=4, cores=2,
     data=DISS_do02.imp_z,
     file="./analysis/mr.rewp_sym")
 summary(mr.rewp_sym)
@@ -200,7 +201,7 @@ mr.fn_sym <- brm_multiple(family = gaussian,
               prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
-    iter=2000, warmup=1000, chains=4, cores=2,
+    iter=5000, warmup=1000, chains=4, cores=2,
     data=DISS_do02.imp_z,
     file="./analysis/mr.fn_sym")
 summary(mr.fn_sym)
@@ -259,3 +260,9 @@ conditional_effects(mr.piltn_sym)
 pp_check(mr.piltn_sym, nsamples=20)
 ```
 
+# 3.0 Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```

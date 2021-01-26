@@ -215,6 +215,12 @@ summary(lm(rewp_r ~ Income_to_Need, DISS_do04)) #*
 summary(lm(fn_r ~ Income_to_Need, DISS_do04))
 summary(lm(p2_r ~ Income_to_Need, DISS_do04)) #*
 
+summary(lm(rewp_ACC ~ Income_to_Need, DISS_do04)) #*
+summary(lm(rewp_REJ ~ Income_to_Need, DISS_do04))
+
+summary(lm(Reward_bias_20 ~ Income_to_Need, DISS_do04))
+summary(lm(Loss_bias_20 ~ Income_to_Need, DISS_do04)) #**
+
 ggplot(DISS_do04, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(formula=y~x, method="lm")

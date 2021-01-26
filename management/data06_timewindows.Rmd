@@ -55,11 +55,33 @@ Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer and time wi
 ## 1.5 Load Data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-#Full sample
-DISS_cleaned_fromBVA <- read.csv("../_rawdata/DISS_cleaned_fromBVA.csv")
-DISS_cleaning06_pca <- DISS_cleaned_fromBVA; rm(DISS_cleaned_fromBVA)
+    #Full sample
+    DISS_cleaned_fromBVA <- read.csv("../_rawdata/DISS_cleaned_fromBVA.csv")
+    DISS_cleaning06_pca <- DISS_cleaned_fromBVA; rm(DISS_cleaned_fromBVA)
+```
 
-save(DISS_cleaning06_pca, file="./data/DISS_cleaning06_pca.RData")
+## 1.6 Import significant PCA components
+```{r}
+    #RewP component (TF2SF1)
+    DISS_cleaned_components_acc <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______ACC__TF02SF1.txt", header=FALSE)
+    DISS_cleaning06_tf2sf1_acc <- DISS_cleaned_components_acc; rm(DISS_cleaned_components_acc)
+    
+    DISS_cleaned_components_rej <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______REJ__TF02SF1.txt", header=FALSE)
+    DISS_cleaning06_tf2sf1_rej <- DISS_cleaned_components_rej; rm(DISS_cleaned_components_rej)
+    
+    #P2 component (TF4SF1)
+    DISS_cleaned_components_acc <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______ACC__TF04SF1.txt", header=FALSE)
+    DISS_cleaning06_tf4sf1_acc <- DISS_cleaned_components_acc; rm(DISS_cleaned_components_acc)
+    
+    DISS_cleaned_components_rej <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______REJ__TF04SF1.txt", header=FALSE)
+    DISS_cleaning06_tf4sf1_rej <- DISS_cleaned_components_rej; rm(DISS_cleaned_components_rej)
+    
+    #N1 component (TF7SF1)
+    DISS_cleaned_components_acc <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______ACC__TF07SF1.txt", header=FALSE)
+    DISS_cleaning06_tf7sf1_acc <- DISS_cleaned_components_acc; rm(DISS_cleaned_components_acc)
+    
+    DISS_cleaned_components_rej <-     read.table("./data/PCA_data/full_corrected_USETHIS/For_BVA/DISS_data_pca.txt_grand average______REJ__TF07SF1.txt", header=FALSE)
+    DISS_cleaning06_tf7sf1_rej <- DISS_cleaned_components_rej; rm(DISS_cleaned_components_rej)
 ```
 
 # 2. Create subject level component averages
@@ -107,12 +129,47 @@ DISS_cleaning_tw_components_wide$fn_r <- stdres(lm(rewp_REJ ~ rewp_ACC, DISS_cle
 DISS_cleaning06_tw <- DISS_cleaning_tw_components_wide
 ```
 
-# 3. Save Data
+# 4. Clean significant PCA compoents
+```{r}
+electrodes <- c('Fp1', 'Fz', 'F3', 'F7', 'FT9', 'FC5', 'FC1', 'C3', 'T7', 'TP9', 'CP5','CP1', 'Pz', 'P3', 'P7', 'O1', 'Oz', 'O2', 'P4', 'P8', 'TP10', 'CP6', 'CP2', 'C4', 'T8', 'FT10', 'FC6', 'FC2', 'F4', 'F8', 'Fp2', 'Cz')
+
+combine_conditions <- function(Acc, Rej, electrode_scheme) {
+  #Label columns according to electrodes
+  colnames(Acc) <- electrodes; colnames(Rej) <- electrodes
+  
+  # Add Time and Condition variables
+  Acc_tim <- Acc %>%
+  mutate(Condition="ACC",
+         Time=rep(seq(-200,799,2),1)) %>%
+  dplyr::select(Time,Condition,everything())
+  
+  Rej_time <- Rej %>%
+  mutate(Condition="REJ",
+         Time=rep(seq(-200,799,2),1)) %>%
+  dplyr::select(Time,Condition,everything())
+  
+  # Merge ACC and REJ conditions
+  return(rbind(Acc_tim, Rej_time))
+}
+
+DISS_cleaning06_tf2sf1 <- combine_conditions(Acc=DISS_cleaning06_tf2sf1_acc, Rej=DISS_cleaning06_tf2sf1_rej, electrode_scheme=electrodes)
+DISS_cleaning06_tf4sf1 <- combine_conditions(Acc=DISS_cleaning06_tf4sf1_acc, Rej=DISS_cleaning06_tf4sf1_rej, electrode_scheme=electrodes)
+DISS_cleaning06_tf7sf1 <- combine_conditions(Acc=DISS_cleaning06_tf7sf1_acc, Rej=DISS_cleaning06_tf7sf1_rej, electrode_scheme=electrodes)
+```
+
+```{r}
+save(DISS_cleaning06_pca, file="./data/DISS_cleaning06_pca.RData")
+save(DISS_cleaning06_tf2sf1, file="./data/DISS_cleaning06_tf2sf1.RData")
+save(DISS_cleaning06_tf4sf1, file="./data/DISS_cleaning06_tf4sf1.RData")
+save(DISS_cleaning06_tf7sf1, file="./data/DISS_cleaning06_tf7sf1.RData")
+```
+
+# 5. Save Data
 ```{r}
 save(DISS_cleaning06_tw, file="./data/DISS_cleaning06_tw.RData")
 ```
 
-# 4. Closing out
+# 6. Closing out
   In this step, go ahead and close out of the file and quit R without saving  
   the work space.
 ```{r}

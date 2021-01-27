@@ -20,7 +20,7 @@ Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer and time wi
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
     options(scipen = 999) #Disable scientific notation
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 

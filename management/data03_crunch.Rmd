@@ -19,7 +19,7 @@ This script imports the CRUNCH dataset and selects only the symptom and demograp
 ## 1.1. Clear everything & set width
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -53,7 +53,7 @@ renv::restore()
 ## 1.5 Load Data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_08_28_20.sav")
+CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_10_23_20.sav")
 crunch <- CRUNCH; rm(CRUNCH)
 ```
 

@@ -19,7 +19,7 @@ This script imports and cleans data from the MacArthur Health & Behavior Questio
 ## 1.1. Clear everything & set width
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 

@@ -20,7 +20,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
     options(scipen = 999) #Disable scientific notation
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -88,7 +88,7 @@ measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","Reward_bias_
 factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
 
 for (f in factors_list){ 
-    eval(parse(text=paste0("DISS_do01_full$",f,"_f <- with(DISS_do01_full, as.factor(",f,"))"))) 
+    eval(parse(text=paste0("DISS_do01_full$",f,"_f <- with(DISS_do01_full, as.factor(",f,"))")))
 }
 
 contrasts(DISS_do01_full$sex_f) <- contr.sum(2)

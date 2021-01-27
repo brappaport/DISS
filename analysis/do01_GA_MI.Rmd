@@ -232,8 +232,21 @@ tfsf_plots <- ggarrange(tf2sf1_ga_plot, tf4sf1_ga_plot,
 ggsave("./figures/Figure_3.png", tfsf_plots, width = 10.5, height = 13)
 ```
 
+# 3. Check for univariate & multivariate outliers
+```{r}
+#Univariate
+apply(DISS_do01[,c(2:5,10:13)], 2, function(x) which(x > (mean(x, na.rm=T)+3*sd(x, na.rm=T)) | x < (mean(x, na.rm=T)-3*sd(x, na.rm=T))))
 
-# 3. Missing data
+#Multivariate
+data_p <- psych::outlier(DISS_do01[,c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","sex","Income_to_Need","PDSIII_Race","PDSIII_Hispanic")],plot = T,bad=10,na.rm=T)
+rows_to_exclude <- which(pchisq(data_p,df=11,ncp=0,lower.tail = F,log.p = F)<.01)
+rows_to_exclude
+
+DISS_do01_nooutliers <- DISS_do01[-rows_to_exclude, ]
+length(DISS_do01_nooutliers$Subid)
+```
+
+# 4. Missing data
 ```{r}
 sum(complete.cases(DISS_do01$rewp_r)) #number of participants that completed IG with good data
 
@@ -243,13 +256,13 @@ DISS_do01 %>% #missing data for each variable
 ```
 N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BDI/CDI measure (Subids: 100,101,121,199,584), 0 missing SIAS/SPS, 16 missing PILT, 9 missing DOS psychotropic medication use.
 
-## 3.1. Test MCAR
+## 4.1. Test MCAR
 ```{r}
 TestMCARNormality(DISS_do01[,c(2:5,10:16)], imputation.number=10, imputation.method="Dist.Free", seed=919)
 ```
 The non-parametric test shows that there is not sufficient evidence to rejection MCAR asssumption, therefore data are assumed to be missing completely at random.
 
-## 3.2. Multiple imputation
+## 4.2. Multiple imputation
 Conduct multiple imputation using package 'mice' and the following steps outlined here: 
 http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 ```{r}
@@ -264,7 +277,7 @@ DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01$Loss_bias_20)
 DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
 ```
 
-## 3.2.1. Check imputed values
+## 4.2.1. Check imputed values
 ```{r}
 # Reward bias
 ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20, color = Reward_bias_20.NA)) + 
@@ -280,7 +293,7 @@ ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc, color = S5cdic_bdi_per
 ```
 
 
-# 4. Standardize measures
+# 5. Standardize measures
 Center and standardize all measures to make b estimates from multiple regressions more interpretable.
 ```{r}
 #convert into datlist

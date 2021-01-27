@@ -63,6 +63,11 @@ Remember to immediately rename and remove. Avoid overwriting old data.
       load(file = "./data/DISS_cleaning07.RData")   
       DISS_do04_full <- DISS_cleaning07  ## first create new data
       rm("DISS_cleaning07")             ## remove old data
+      
+      CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_10_23_20.sav")
+      crunch <- CRUNCH; rm(CRUNCH)
+      
+      DISS_do04_exp <- merge(DISS_do04_full, crunch, by="Subid")
 ```      
 
 ## 1.6. Subset data
@@ -96,6 +101,21 @@ http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 # DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01$Loss_bias_20)
 # DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
 ```
+
+# Check the PILT is calculated similarly to papst waves
+```{r}
+# Check the PILT P and PILT N
+sum(!is.na(DISS_do04_exp$S5Block1_Bias_FP))
+sum(!is.na(DISS_do04_exp$Reward_bias_20_block1))
+
+# PILT P
+corr.test(DISS_do04_exp$S5Block1_Bias_FP, DISS_do04_exp$Reward_bias_20_block1, method="pearson", use="complete.obs")
+corr.test(DISS_do04_exp$S5Block2_Bias_FP, DISS_do04_exp$Reward_bias_20_block2, method="pearson", use="complete.obs")
+# PILT N
+corr.test(DISS_do04_exp$S5Block1_Bias_FN, DISS_do04_exp$Loss_bias_20_block1, method="pearson", use="complete.obs")
+corr.test(DISS_do04_exp$S5Block2_Bias_FN, DISS_do04_exp$Loss_bias_20_block2, method="pearson", use="complete.obs")
+```
+
 
 # 3. With P2 component
 ```{r}
@@ -215,11 +235,17 @@ summary(lm(rewp_r ~ Income_to_Need, DISS_do04)) #*
 summary(lm(fn_r ~ Income_to_Need, DISS_do04))
 summary(lm(p2_r ~ Income_to_Need, DISS_do04)) #*
 
+rewp_i2n <- lm(rewp_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #* #fdr*
+fn_i2n <- lm(fn_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp)
+p2_i2n <- lm(p2_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #*
+
 summary(lm(rewp_ACC ~ Income_to_Need, DISS_do04)) #*
 summary(lm(rewp_REJ ~ Income_to_Need, DISS_do04))
 
 summary(lm(Reward_bias_20 ~ Income_to_Need, DISS_do04))
 summary(lm(Loss_bias_20 ~ Income_to_Need, DISS_do04)) #**
+
+p.adjust(p=c(tidy(rewp_i2n)$p.value[2], tidy(fn_i2n)$p.value[2], tidy(fn_i2n)$p.value[2]), method="fdr")
 
 ggplot(DISS_do04, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
@@ -234,7 +260,58 @@ ggplot(DISS_do04, aes(x=Income_to_Need, y=p2_r)) +
   stat_smooth(formula=y~x, method="lm")
 ```
 
-# 9. Raw components scores
+# 9. Life events
+```{r}
+# Stressful life events
+summary(lm(rewp_r ~ LEA_S5_N, DISS_do04_exp))
+summary(lm(fn_r ~ LEA_S5_N, DISS_do04_exp))
+summary(lm(p2_r ~ LEA_S5_N, DISS_do04_exp))
+
+summary(lm(rewp_r ~ LEA_S4toS5_N, DISS_do04_exp))
+summary(lm(fn_r ~ LEA_S4toS5_N, DISS_do04_exp))
+summary(lm(p2_r ~ LEA_S4toS5_N, DISS_do04_exp))
+# Traumatic life events
+summary(lm(rewp_r ~ LEB_S5_N, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S5_N, DISS_do04_exp)) #*
+summary(lm(p2_r ~ LEB_S5_N, DISS_do04_exp))
+
+summary(lm(rewp_r ~ LEB_S4toS5_N, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S4toS5_N, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_S4toS5_N, DISS_do04_exp)) #*
+
+# Preschool traumatic life events
+summary(lm(rewp_r ~ LEB_N_PS, DISS_do04_exp)) #* (wrong direction)
+summary(lm(fn_r ~ LEB_N_PS, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_N_PS, DISS_do04_exp))
+
+# Relationship life events
+summary(lm(rewp_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
+summary(lm(fn_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
+summary(lm(p2_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
+
+# Traumatic life events*Scan 5 Income to Need
+summary(lm(rewp_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
+# Traumatic life events*Income to Need
+summary(lm(rewp_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
+
+# Traumatic life events*Cumulative depression
+summary(lm(rewp_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
+
+# Recent traumatic life events*recent depression
+summary(lm(rewp_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
+summary(lm(fn_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
+summary(lm(p2_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
+```
+
+
+
+# . Raw components scores
 ```{r}
 summary(lm(rewp_ACC ~ Reward_bias_20 + Loss_bias_20 + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need, DISS_do04))
 summary(lm(rewp_ACC ~ Reward_bias_20 + Loss_bias_20, DISS_do04))

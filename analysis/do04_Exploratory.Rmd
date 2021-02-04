@@ -20,7 +20,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
     options(scipen = 999) #Disable scientific notation
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -88,6 +88,15 @@ DISS_do04 <- DISS_do04_full %>% #subset data to only include those that complete
     drop_na(rewp_r, T20age)
 ```
 
+### Count data
+```{r}
+sum(!is.na(DISS_do04_exp$S5CDI2C_T.x))
+sum(!is.na(DISS_do04_exp$S5BDItotalscore.x))
+sum(!is.na(DISS_do04_exp$S5SIAS6_score.x))
+sum(!is.na(DISS_do04_exp$S5SPS6_score.x))
+```
+
+
 ## 2. Multiple imputation
 Conduct multiple imputation using package 'mice' and the following steps outlined here: 
 http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
@@ -102,7 +111,7 @@ http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 # DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
 ```
 
-# Check the PILT is calculated similarly to papst waves
+# Check the PILT is calculated similarly to past waves
 ```{r}
 # Check the PILT P and PILT N
 sum(!is.na(DISS_do04_exp$S5Block1_Bias_FP))
@@ -158,6 +167,11 @@ summary(lm(rewp_r ~ T20_MDD, DISS_do04))
 summary(lm(fn_r ~ T20_MDD, DISS_do04))
 summary(lm(p2_r ~ T20_MDD, DISS_do04))
 
+#T1_MDD
+summary(lm(rewp_r ~ T1MDDCore, DISS_do04))
+summary(lm(fn_r ~ T1MDDCore, DISS_do04))
+summary(lm(p2_r ~ T1MDDCore, DISS_do04))
+
 #rel_MDDBP_01
 DISS_do04$rel_MDDBP_01 <- ifelse(DISS_do04$rel_MDDBP>=1,1,0)
 summary(lm(rewp_r ~ rel_MDDBP_01, DISS_do04))
@@ -178,6 +192,28 @@ summary(lm(fn_r ~ S5SOC, DISS_do04))
 summary(lm(p2_r ~ S5SOC, DISS_do04))
 ```
 
+# 5. BPD
+```{r}
+summary(lm(rewp_r ~ S4BPFSC_NR, DISS_do04_exp))
+summary(lm(fn_r ~ S4BPFSC_NR, DISS_do04_exp))
+summary(lm(p2_r ~ S4BPFSC_NR, DISS_do04_exp))
+
+summary(lm(rewp_r ~ S4BPFSC_T, DISS_do04_exp))
+summary(lm(fn_r ~ S4BPFSC_T, DISS_do04_exp))
+summary(lm(p2_r ~ S4BPFSC_T, DISS_do04_exp))
+
+summary(lm(rewp_r ~ S5BPFSC_NR, DISS_do04_exp))
+summary(lm(fn_r ~ S5BPFSC_NR, DISS_do04_exp))
+summary(lm(p2_r ~ S5BPFSC_NR, DISS_do04_exp))
+
+summary(lm(rewp_ACC ~ S5BPFSC_NR, DISS_do04_exp))
+summary(lm(rewp_REJ ~ S5BPFSC_NR, DISS_do04_exp))
+
+summary(lm(rewp_r ~ S5BPFSC_T, DISS_do04_exp))
+summary(lm(fn_r ~ S5BPFSC_T, DISS_do04_exp))
+summary(lm(p2_r ~ S5BPFSC_T, DISS_do04_exp))
+```
+
 # 6. Voting behavior
 ```{r}
 summary(lm(Keep_prop ~ S5cdic_bdi_perc, DISS_do04))
@@ -185,6 +221,11 @@ summary(lm(Keep_prop ~ S5_SIASSPS, DISS_do04))
 
 summary(lm(Keep_prop ~ Reward_bias_20, DISS_do04))
 summary(lm(Keep_prop ~ Loss_bias_20, DISS_do04))
+
+summary(lm(Keep_prop ~ rewp_r, DISS_do04))
+summary(lm(Keep_prop ~ fn_r, DISS_do04))
+
+summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
 
 #Extension of Frontiers paper )with peer victimization)
 summary(lm(Keep_prop ~ PPr_Avg_early + T20age, DISS_do04))
@@ -235,9 +276,9 @@ summary(lm(rewp_r ~ Income_to_Need, DISS_do04)) #*
 summary(lm(fn_r ~ Income_to_Need, DISS_do04))
 summary(lm(p2_r ~ Income_to_Need, DISS_do04)) #*
 
-rewp_i2n <- lm(rewp_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #* #fdr*
-fn_i2n <- lm(fn_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp)
-p2_i2n <- lm(p2_r ~ Income_to_Need + S5MDDCore.x + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #*
+rewp_i2n <- lm(rewp_r ~ Income_to_Need + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #* #fdr*
+fn_i2n <- lm(fn_r ~ Income_to_Need + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp)
+p2_i2n <- lm(p2_r ~ Income_to_Need + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #*
 
 summary(lm(rewp_ACC ~ Income_to_Need, DISS_do04)) #*
 summary(lm(rewp_REJ ~ Income_to_Need, DISS_do04))
@@ -245,20 +286,19 @@ summary(lm(rewp_REJ ~ Income_to_Need, DISS_do04))
 summary(lm(Reward_bias_20 ~ Income_to_Need, DISS_do04))
 summary(lm(Loss_bias_20 ~ Income_to_Need, DISS_do04)) #**
 
+summary(lm(Income_to_Need ~ rewp_r + Loss_bias_20, DISS_do04)) #**
+
 p.adjust(p=c(tidy(rewp_i2n)$p.value[2], tidy(fn_i2n)$p.value[2], tidy(fn_i2n)$p.value[2]), method="fdr")
 
 ggplot(DISS_do04, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(formula=y~x, method="lm")
 
-ggplot(DISS_do04, aes(x=Income_to_Need, y=fn_r)) +
-  geom_point() +
-  stat_smooth(formula=y~x, method="lm")
-
-ggplot(DISS_do04, aes(x=Income_to_Need, y=p2_r)) +
+ggplot(DISS_do04, aes(x=Income_to_Need, y=Loss_bias_20)) +
   geom_point() +
   stat_smooth(formula=y~x, method="lm")
 ```
+
 
 # 9. Life events
 ```{r}

@@ -37,6 +37,13 @@
       "Repository": "CRAN",
       "Hash": "acac794cc3e393ca65f916e5ced5c1d2"
     },
+    "DiagrammeR": {
+      "Package": "DiagrammeR",
+      "Version": "1.0.6.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "3cb13b97961593b4a1ed0c8e37df9d9b"
+    },
     "FactoMineR": {
       "Package": "FactoMineR",
       "Version": "2.4",
@@ -457,6 +464,13 @@
       "Repository": "CRAN",
       "Hash": "a0cbe758a531d054b537d16dff4d58a1"
     },
+    "downloader": {
+      "Package": "downloader",
+      "Version": "0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f4f2a915e0dedbdf016a83b63477349f"
+    },
     "dplyr": {
       "Package": "dplyr",
       "Version": "1.0.3",
@@ -751,6 +765,13 @@
       "Repository": "CRAN",
       "Hash": "3878c30ce67cdb7f2d7f72554e37f476"
     },
+    "influenceR": {
+      "Package": "influenceR",
+      "Version": "0.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "611f9a55ad32ccfa17ccbd77be7a2804"
+    },
     "inline": {
       "Package": "inline",
       "Version": "0.3.16",
@@ -813,6 +834,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "fbd9285028b0263d76d18c95ae51a53d"
+    },
+    "lavaan": {
+      "Package": "lavaan",
+      "Version": "0.6-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "6cc8bb26e9deab15394d48d5ded61ce2"
+    },
+    "lavaanPlot": {
+      "Package": "lavaanPlot",
+      "Version": "0.5.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "22ff98cae3669242badad928f18e233b"
     },
     "lazyeval": {
       "Package": "lazyeval",
@@ -1070,6 +1105,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "2f841d7915986a8fd995ab4ec105dd1b"
+    },
+    "pbivnorm": {
+      "Package": "pbivnorm",
+      "Version": "0.6.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "643e16a7da6aac3e18cadc3e14abb94b"
     },
     "pbkrtest": {
       "Package": "pbkrtest",
@@ -1344,6 +1386,13 @@
       "Repository": "CRAN",
       "Hash": "3838071b66e0c566d55cc26bd6e27bf4"
     },
+    "semTools": {
+      "Package": "semTools",
+      "Version": "0.5-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "ccbd9a5e889b9823bab0945c6a75179b"
+    },
     "sfsmisc": {
       "Package": "sfsmisc",
       "Version": "1.1-7",
@@ -1511,6 +1560,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ce4f6271baa94776db692f1cb2055bee"
+    },
+    "visNetwork": {
+      "Package": "visNetwork",
+      "Version": "2.0.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "12545f2acf49d1d346d075580122d89c"
     },
     "visdat": {
       "Package": "visdat",

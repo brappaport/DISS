@@ -43,6 +43,8 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
   library(pander)     #make nice tables
+  library(lavaan)     #SEM analyses
+  library(beepr)      #beep upon completion
   library(workflowr)  #helps with workflow
 ```
 
@@ -179,6 +181,58 @@ summary(lm(fn_r ~ rel_MDDBP_01, DISS_do04))
 summary(lm(p2_r ~ rel_MDDBP_01, DISS_do04))
 ```
 
+## 4.1 Growth models
+```{r}
+MDDCORE.growth <- '
+#Define latent variables
+PILT.P =~ 1*Reward_bias_20
+PILT.N =~ 1*Loss_bias_20
+REWP =~ 1*rewp_r
+FN =~ 1*fn_r
+MDD =~ 1*S5cdic_bdi_perc
+SAD =~ 1*S5_SIASSPS
+
+#Define slope
+sMDD =~ 0*T1MDDCore.x	+ 1.0351*T3MDDCore.x + 2.0029*T5MDDCore.x + 4.5900*T6MDDCore.x + 5.7196*T8MDDCore.x + 
+        6.7056*T10MDDCore.x + 7.7505*T12MDDCore.x + 8.7730*T14MDDCore.x + 11.8208*T18MDDCore.x
+
+#Define intercept
+iMDD =~ 1*T1MDDCore.x	+ 1*T3MDDCore.x + 1*T5MDDCore.x + 1*T6MDDCore.x + 1*T8MDDCore.x + 1*T10MDDCore.x + 1*T12MDDCore.x + 1*T14MDDCore.x + 1*T18MDDCore.x
+
+#Define residual error
+PILT.P ~~ PILT.P
+PILT.N ~~ PILT.N
+REWP ~~ REWP
+FN ~~ FN
+MDD ~~ MDD
+SAD ~~ SAD
+sMDD ~~ sMDD
+iMDD ~~ iMDD
+
+#Define same method correlations
+PILT.P ~~ PILT.N
+REWP ~~ FN
+MDD ~~ SAD
+sMDD ~~ iMDD
+
+#Regressions
+REWP ~ iMDD + sMDD
+FN ~ iMDD + sMDD
+MDD ~ iMDD + sMDD
+SAD ~ iMDD + sMDD
+PILT.P ~ iMDD + sMDD
+PILT.N ~ iMDD + sMDD
+
+#iMDD ~ sex.x + T20age + PDSIII_Race + PDSIII_Hispanic + Income_to_Need
+#sMDD ~ sex.x + T20age + PDSIII_Race + PDSIII_Hispanic + Income_to_Need
+'
+fit.MDDCORE.growth <- growth(MDDCORE.growth, data=DISS_do04_exp, missing="ML", estimator="ML")
+beep(sound = 1, expr = NULL)
+
+summary(fit.MDDCORE.growth, fit.measures=T, standardized=T)
+```
+
+
 # 5. Other measures of Social phobia
 ```{r}
 #T20_SOC
@@ -212,6 +266,10 @@ summary(lm(rewp_REJ ~ S5BPFSC_NR, DISS_do04_exp))
 summary(lm(rewp_r ~ S5BPFSC_T, DISS_do04_exp))
 summary(lm(fn_r ~ S5BPFSC_T, DISS_do04_exp))
 summary(lm(p2_r ~ S5BPFSC_T, DISS_do04_exp))
+
+summary(lm(rewp_r ~ S5BPFSC_SH, DISS_do04_exp))
+summary(lm(fn_r ~ S5BPFSC_SH, DISS_do04_exp))
+summary(lm(p2_r ~ S5BPFSC_SH, DISS_do04_exp))
 ```
 
 # 6. Voting behavior
@@ -226,8 +284,10 @@ summary(lm(Keep_prop ~ rewp_r, DISS_do04))
 summary(lm(Keep_prop ~ fn_r, DISS_do04))
 
 summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
+```
 
-#Extension of Frontiers paper )with peer victimization)
+#7. Extension of Frontiers paper with peer victimization)
+```{r}
 summary(lm(Keep_prop ~ PPr_Avg_early + T20age, DISS_do04))
 summary(lm(Keep_prop ~ T18hbqhPRr + T20age, DISS_do04))
 
@@ -347,6 +407,27 @@ summary(lm(p2_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
 summary(lm(rewp_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
 summary(lm(fn_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
 summary(lm(p2_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
+```
+
+# 10. Bis/Bas
+```{r}
+S5bis_bas <- c("S5BAS_C_drive","S5BAS_C_funseek","S5BAS_C_funseek2","S5BAS_C_reward","S5BAS_C_reward2","S5BIS_C","S5BIS_C2","S5BAS_C_reward_revised","S5BAS_C_reward_revised2","S5BIS_C_revised")
+elec
+
+for(c in c("rewp_r","fn_r","p2_r")) {
+  for (m in S5bis_bas){
+    print(paste0("###################### COMPONENT: ",c," ######################"))
+    print(paste0("###################### SYMPTOM MEASURE: ",m," ######################"))
+    print(eval(parse(text=paste0("summary(lm(",c," ~ ",m,", data=DISS_do04_exp))[4]"))))
+  }
+}
+
+summary(lm(fn_r~S5BIS_C, DISS_do04_exp)) #*
+summary(lm(fn_r~S5BIS_C2, DISS_do04_exp)) #*
+
+ggplot(DISS_do04_exp, aes(y=fn_r, x=S5BIS_C2)) +
+  geom_point() +
+  stat_smooth(method=lm)
 ```
 
 

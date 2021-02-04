@@ -48,7 +48,7 @@ In addition to an overall measure of reward bias and loss avoidance in each of t
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(8675309)    #Set seed
+     set.seed(919)    #Set seed
 ```
 
 ## 1.5 Load Data
@@ -65,6 +65,8 @@ piltn_data <- PILTN_data; rm(PILTN_data)
 ### 2.1. PILT-P
 ```{r}
 piltp_data$Subid <- as.numeric(piltp_data$Subject)
+length(unique(piltp_data$Subid))
+
 piltp_data$Block <- piltp_data$Block-1
 # Take log of reaction time to use later in Quality Control
 piltp_data$log_Mouth.RT <- log(piltp_data$Mouth.RT)
@@ -116,6 +118,8 @@ piltp_data_cleaned <- piltp_data_clean %>%
 ### 2.2. PILT-N
 ```{r}
 piltn_data$Subid <- as.numeric(piltn_data$Subject)
+length(unique(piltn_data$Subid))
+
 piltn_data$Block <- piltn_data$Block-1
 # Take log of reaction time to use later in Quality Control
 piltn_data$log_Mouth.RT <- log(piltn_data$Mouth.RT)
@@ -330,6 +334,9 @@ DISS_cleaning05_pilt <- merge(CLEAN_piltp_data, CLEAN_piltn_data, by="Subid")
 # 2 Save Data
 ```{r}
 save(DISS_cleaning05_pilt, file="./data/DISS_cleaning05_pilt.RData")
+
+sum(!is.na(DISS_cleaning05_pilt$Reward_bias_20))
+sum(!is.na(DISS_cleaning05_pilt$Loss_bias_20))
 ```
 
 # 3 Closing out

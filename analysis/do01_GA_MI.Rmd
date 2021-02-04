@@ -99,6 +99,11 @@ contrasts(DISS_do01_full$S5psychmed_dos_f) <- contr.sum(2)
 DISS_do01 <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
     drop_na(rewp_r, T20age) %>%
     dplyr::select(c(Subid, all_of(measures_list), all_of(factors_list), paste0(factors_list[1:3],"_f")))
+
+var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
+var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f")
+
+var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
 ```
 
 # 2. Make and plot grand averages
@@ -232,19 +237,21 @@ tfsf_plots <- ggarrange(tf2sf1_ga_plot, tf4sf1_ga_plot,
 ggsave("./figures/Figure_3.png", tfsf_plots, width = 10.5, height = 13)
 ```
 
-# 3. Check for univariate & multivariate outliers
+# 3. Check for univariate & multivariate outliers (not including covariates)
+Do NOT include covariates, otherwise this leads to excuding the 3 Hispanic subjects
 ```{r}
 #Univariate
-apply(DISS_do01[,c(2:5,10:13)], 2, function(x) which(x > (mean(x, na.rm=T)+3*sd(x, na.rm=T)) | x < (mean(x, na.rm=T)-3*sd(x, na.rm=T))))
+apply(DISS_do01[,var_interest_f[1:6]], 2, function(x) which(x > (mean(x, na.rm=T)+3*sd(x, na.rm=T)) | x < (mean(x, na.rm=T)-3*sd(x, na.rm=T))))
 
 #Multivariate
-data_p <- psych::outlier(DISS_do01[,c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","sex","Income_to_Need","PDSIII_Race","PDSIII_Hispanic")],plot = T,bad=10,na.rm=T)
-rows_to_exclude <- which(pchisq(data_p,df=11,ncp=0,lower.tail = F,log.p = F)<.01)
+data_p <- psych::outlier(DISS_do01[,var_interest_nocovar],plot = T,bad=10,na.rm=T)
+rows_to_exclude <- which(pchisq(data_p,df=6,ncp=0,lower.tail = F,log.p = F)<.001)
 rows_to_exclude
 
 DISS_do01_nooutliers <- DISS_do01[-rows_to_exclude, ]
 length(DISS_do01_nooutliers$Subid)
 ```
+# 1 removed as multivariate outlier
 
 # 4. Missing data
 ```{r}
@@ -258,42 +265,67 @@ N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BD
 
 ## 4.1. Test MCAR
 ```{r}
-TestMCARNormality(DISS_do01[,c(2:5,10:16)], imputation.number=10, imputation.method="Dist.Free", seed=919)
+TestMCARNormality(data=DISS_do01_nooutliers[,var_interest_n], imputation.number=10, imputation.method="Dist.Free", seed=919)
 ```
 The non-parametric test shows that there is not sufficient evidence to rejection MCAR asssumption, therefore data are assumed to be missing completely at random.
+
+"So the results of the test of MCAR for homogenity of covariances show us, that mcar was not rejected because of non-normality or heteroscedasticity. If the Hawkins-test becomes significant, the „MissMech“-package performs a nonparametric test on homoscedasticity. This way, it can show through the method of elimination if non-normality or heteroscedasticity is a problem." (https://statistics.ohlsen-web.de/multiple-imputation-with-mice/)
 
 ## 4.2. Multiple imputation
 Conduct multiple imputation using package 'mice' and the following steps outlined here: 
 http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 ```{r}
-md.pattern(DISS_do01[,c(2:5,10:13,18:20)])
-DISS_do01.imp <- mice(DISS_do01[,c(2:5,10:13,18:20)], m = 10, method = 'pmm', seed=919) #generate 10 imputed datasets
+md.pattern(DISS_do01[,var_interest_f])
+DISS_do01.imp <- mice(DISS_do01_nooutliers[,var_interest_f], m = 10, method = 'pmm', seed=919) #generate 10 imputed datasets
 summary(DISS_do01.imp)
 
 DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
 
-DISS_do01.comp$Reward_bias_20.NA <- cci(DISS_do01$Reward_bias_20)
-DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01$Loss_bias_20)
-DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
+DISS_do01.comp$Reward_bias_20.NA <- cci(DISS_do01_nooutliers$Reward_bias_20)
+DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01_nooutliers$Loss_bias_20)
+DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01_nooutliers$S5cdic_bdi_perc)
 ```
 
-## 4.2.1. Check imputed values
+## 4.2.1. Check imputed values (line indicates mean)
 ```{r}
 # Reward bias
-ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20, color = Reward_bias_20.NA)) + 
-  geom_jitter(show.legend = FALSE, width = .2)
+ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20)) + 
+  geom_jitter(aes(color=Reward_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
 
 # Loss avoidance
-ggplot(DISS_do01.comp, aes(x = .imp, y = Loss_bias_20, color = Loss_bias_20.NA)) + 
-  geom_jitter(show.legend = FALSE, width = .2)
+ggplot(DISS_do01.comp, aes(x = .imp, y = Loss_bias_20)) + 
+  geom_jitter(aes(color=Loss_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
 
 # Current depression severity
-ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc, color = S5cdic_bdi_perc.NA)) + 
-  geom_jitter(show.legend = FALSE, width = .2)
+ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc)) + 
+  geom_jitter(aes(color=S5cdic_bdi_perc.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
 ```
 
+# 5. Demographic table
+```{r}
+demo_1 <- complete(DISS_do01.imp, 1) %>%
+  select(c("T20age","Income_to_Need","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")) %>%
+  psych::describe() %>%
+  print(digits=2) %>%
+  select(n,mean,sd)
 
-# 5. Standardize measures
+demo_2 <- complete(DISS_do01.imp, 2) %>%
+  select(c("T20age","Income_to_Need","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")) %>%
+  psych::describe() %>%
+  print(digits=2) %>%
+  select(n,mean,sd)
+
+demo_3 <- complete(DISS_do01.imp, 3) %>%
+  select(c("T20age","Income_to_Need","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")) %>%
+  psych::describe() %>%
+  print(digits=2) %>%
+  select(n,mean,sd)
+```
+
+# 6. Standardize measures
 Center and standardize all measures to make b estimates from multiple regressions more interpretable.
 ```{r}
 #convert into datlist

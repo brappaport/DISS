@@ -161,6 +161,120 @@ write.csv(x=aim3_table, file="./tables/PILT_Sym_table.csv"); aim3_table
 # summary(pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_block2 ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))))
 ```
 
+# 3. TBD SEM analyses
+```{r}
+library(lavaan)
+library(lavaanPlot)
+library(semTools)
+library(semPlot)
+
+simple_model <- '
+#Define latent variables
+PILT.P =~ 1*Reward_bias_20_z
+PILT.N =~ 1*Loss_bias_20_z
+REWP =~ 1*rewp_r_z
+FN =~ 1*fn_r_z
+MDD =~ 1*S5cdic_bdi_perc_z
+SAD =~ 1*S5_SIASSPS_z
+
+#Define residual error
+PILT.P ~~ PILT.P
+PILT.N ~~ PILT.N
+REWP ~~ REWP
+FN ~~ FN
+MDD ~~ MDD
+SAD ~~ SAD
+
+#Define correlations
+PILT.P ~~ PILT.N
+REWP ~~ FN
+MDD ~~ SAD
+'
+
+full_model <- '
+#Define latent variables
+PILT.P =~ 1*Reward_bias_20_z
+PILT.N =~ 1*Loss_bias_20_z
+REWP =~ 1*rewp_r_z
+FN =~ 1*fn_r_z
+MDD =~ 1*S5cdic_bdi_perc_z
+SAD =~ 1*S5_SIASSPS_z
+
+#Define residual error
+PILT.P ~~ PILT.P
+PILT.N ~~ PILT.N
+REWP ~~ REWP
+FN ~~ FN
+MDD ~~ MDD
+SAD ~~ SAD
+
+#Define correlations
+PILT.P ~~ PILT.N
+REWP ~~ FN
+MDD ~~ SAD
+
+#Define hypothesized regressions
+
+#Aim 1
+PILT.P ~ REWP
+PILT.N ~ FN
+
+#Aim 2
+REWP ~ MDD
+FN ~ MDD
+FN ~ SAD
+
+#Aim 3
+PILT.P ~ MDD
+PILT.N ~ MDD
+PILT.N ~ SAD
+'
+
+fit_simple_model <- sem(simple_model, data=DISS_do02, missing="FIML", estimator="MLR")
+fit_full_model <- sem(full_model, data=DISS_do02, missing="FIML", estimator="MLR")
+lavTestLRT(fit_simple_model, fit_full_model)
+
+fitmeasures(fit_simple_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
+fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
+
+semPaths(fit_simple_model)
+semPaths(fit_full_model)
+
+summary(fit_simple_model, standardized=TRUE, fit.measures=TRUE)
+summary(fit_full_model, standardized=TRUE, fit.measures=TRUE)
+
+# With imputation datasets
+fit_simple_model_mi <- sem.mi(simple_model, data=DISS_do02.imp_z, estimator="MLR")
+fit_full_model_mi <- sem.mi(full_model, data=DISS_do02.imp_z, estimator="MLR")
+lavTestLRT.mi(fit_simple_model_mi, fit_full_model_mi, test="D2", pool.robust=TRUE)
+
+summary(fit_simple_model_mi)
+summary(fit_full_model_mi)
+```
+
+
+# 4. Exploratory analyses
+```{r}
+summary(pool(with(data=DISS_do02.imp_z, lm(rewp_r_z ~ Income_to_Need_z)))) #*
+summary(pool(with(data=DISS_do02.imp_z, lm(fn_r_z ~ Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, lm(rewp_r_z ~ Income_to_Need_z + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f)))) #~
+summary(pool(with(data=DISS_do02.imp_z, lm(fn_r_z ~ Income_to_Need_z + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f))))
+
+summary(pool(with(data=DISS_do02.imp_z, lm(Reward_bias_20_z ~ Income_to_Need_z))))
+summary(pool(with(data=DISS_do02.imp_z, lm(Loss_bias_20_z ~ Income_to_Need_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, lm(Loss_bias_20_z ~ Income_to_Need_z + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f))))
+
+ggplot(DISS_do04, aes(x=Income_to_Need_z, y=rewp_r_z)) +
+  geom_point() +
+  stat_smooth(formula=y~x, method="lm")
+
+ggplot(DISS_do04, aes(x=Income_to_Need_z, y=Loss_bias_20_z)) +
+  geom_point() +
+  stat_smooth(formula=y~x, method="lm")
+```
+Lower I2N is related to lower response to peer acceptance, and greater avoidance of loss-related response. Interestingly, this effect was specific to the RewP and PILT-N.
 
 # 3.0 Closing out
   In this step, go ahead and close out of the file and quit R without saving  

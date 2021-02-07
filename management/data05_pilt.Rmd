@@ -1,5 +1,5 @@
 ---
-title: "Data prep script 5: PILT results"
+title: "Data prep script 5: Cleaning of probabilistic incentive learning task (PILT)-positive and negative"
 author: "Brent Rappaport"
 date: "`r format(Sys.time(),  '%Y-%m-%d')`"
 output:

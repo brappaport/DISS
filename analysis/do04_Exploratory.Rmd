@@ -66,10 +66,14 @@ Remember to immediately rename and remove. Avoid overwriting old data.
       DISS_do04_full <- DISS_cleaning07  ## first create new data
       rm("DISS_cleaning07")             ## remove old data
       
+      load(file = "./data/DISS_cleaning04_hbq.RData")   
+      DISS_do04_hbq <- DISS_cleaning04_hbq  ## first create new data
+      rm("DISS_cleaning04_hbq")             ## remove old data
+      
       CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_10_23_20.sav")
       crunch <- CRUNCH; rm(CRUNCH)
       
-      DISS_do04_exp <- merge(DISS_do04_full, crunch, by="Subid")
+      DISS_do04_exp <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(DISS_do04_full, DISS_do04_hbq, crunch))
 ```      
 
 ## 1.6. Subset data
@@ -113,7 +117,7 @@ http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 # DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01$S5cdic_bdi_perc)
 ```
 
-# Check the PILT is calculated similarly to past waves
+# 2. Check the PILT is calculated similarly to past waves
 ```{r}
 # Check the PILT P and PILT N
 sum(!is.na(DISS_do04_exp$S5Block1_Bias_FP))
@@ -126,7 +130,6 @@ corr.test(DISS_do04_exp$S5Block2_Bias_FP, DISS_do04_exp$Reward_bias_20_block2, m
 corr.test(DISS_do04_exp$S5Block1_Bias_FN, DISS_do04_exp$Loss_bias_20_block1, method="pearson", use="complete.obs")
 corr.test(DISS_do04_exp$S5Block2_Bias_FN, DISS_do04_exp$Loss_bias_20_block2, method="pearson", use="complete.obs")
 ```
-
 
 # 3. With P2 component
 ```{r}
@@ -193,45 +196,80 @@ MDD =~ 1*S5cdic_bdi_perc
 SAD =~ 1*S5_SIASSPS
 
 #Define slope
-sMDD =~ 0*T1MDDCore.x	+ 1.0351*T3MDDCore.x + 2.0029*T5MDDCore.x + 4.5900*T6MDDCore.x + 5.7196*T8MDDCore.x + 
-        6.7056*T10MDDCore.x + 7.7505*T12MDDCore.x + 8.7730*T14MDDCore.x + 11.8208*T18MDDCore.x
+sMDD =~ 0*T1MDDCore.x	+ 1.0351*T3MDDCore.x + 2.0029*T5MDDCore.x + 4.5900*T6MDDCore.x + 5.7196*T8MDDCore.x + 6.7056*T10MDDCore.x + 7.7505*T12MDDCore.x + 8.7730*T14MDDCore.x + 11.8208*T18MDDCore.x
 
 #Define intercept
 iMDD =~ 1*T1MDDCore.x	+ 1*T3MDDCore.x + 1*T5MDDCore.x + 1*T6MDDCore.x + 1*T8MDDCore.x + 1*T10MDDCore.x + 1*T12MDDCore.x + 1*T14MDDCore.x + 1*T18MDDCore.x
 
-#Define residual error
-PILT.P ~~ PILT.P
-PILT.N ~~ PILT.N
-REWP ~~ REWP
-FN ~~ FN
-MDD ~~ MDD
-SAD ~~ SAD
-sMDD ~~ sMDD
-iMDD ~~ iMDD
-
-#Define same method correlations
-PILT.P ~~ PILT.N
-REWP ~~ FN
-MDD ~~ SAD
-sMDD ~~ iMDD
-
 #Regressions
-REWP ~ iMDD + sMDD
-FN ~ iMDD + sMDD
-MDD ~ iMDD + sMDD
-SAD ~ iMDD + sMDD
-PILT.P ~ iMDD + sMDD
-PILT.N ~ iMDD + sMDD
+iMDD ~ REWP + FN
+sMDD ~ REWP + FN
+iMDD ~ PILT.P + PILT.N
+sMDD ~ PILT.P + PILT.N
+iMDD ~ MDD + SAD
+sMDD ~ MDD + SAD
 
-#iMDD ~ sex.x + T20age + PDSIII_Race + PDSIII_Hispanic + Income_to_Need
-#sMDD ~ sex.x + T20age + PDSIII_Race + PDSIII_Hispanic + Income_to_Need
+iMDD ~ sex.x + T20age.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need
+sMDD ~ sex.x + T20age.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need
 '
-fit.MDDCORE.growth <- growth(MDDCORE.growth, data=DISS_do04_exp, missing="ML", estimator="ML")
+fit.MDDCORE.growth <- growth(MDDCORE.growth, data=DISS_do04_exp, missing="FIML", estimator="MLR")
 beep(sound = 1, expr = NULL)
 
 summary(fit.MDDCORE.growth, fit.measures=T, standardized=T)
 ```
 
+## 4.2 Growth models (vicitmization)
+```{r}
+data_hbq <- read.csv("../../CRUNCH/-HBQ/HBQ_dataset.csv")
+DISS_do04_exp_hbq <- merge(DISS_do04_exp, data_hbq, by="Subid")
+
+DISS_do04_exp_hbq$T6hbqPR <- DISS_do04_exp_hbq$T6hbqhPR
+DISS_do04_exp_hbq$T6hbqPR[!is.na(DISS_do04_exp_hbq$T6hbqpPR)] <- DISS_do04_exp_hbq$T6hbqpPR[!is.na(DISS_do04_exp_hbq$T6hbqpPR)] 
+
+DISS_do04_exp_hbq$T8hbqPR <- DISS_do04_exp_hbq$T8hbqhPR
+DISS_do04_exp_hbq$T8hbqPR[!is.na(DISS_do04_exp_hbq$T8hbqpPR)] <- DISS_do04_exp_hbq$T8hbqpPR[!is.na(DISS_do04_exp_hbq$T8hbqpPR)] 
+```
+
+```{r}
+HBQ.growth <- '
+#Define latent variables
+PILT.P =~ 1*Reward_bias_20
+PILT.N =~ 1*Loss_bias_20
+REWP =~ 1*rewp_r
+FN =~ 1*fn_r
+MDD =~ 1*S5cdic_bdi_perc
+SAD =~ 1*S5_SIASSPS
+
+#Define slope
+sVIC =~ 0*T1hbqpPR.x	+ 1.0351*T3hbqpPR.x + 2.0029*T5hbqpPR.x + 4.5900*T6hbqPR + 5.7196*T8hbqPR + 6.7056*T10hbqhPR + 7.7505*T12hbqhPR + 8.7730*T14hbqhPR + 11.8208*T18hbqhPR.x
+
+#Define intercept
+iVIC =~ 1*T1hbqpPR.x	+ 1*T3hbqpPR.x + 1*T5hbqpPR.x + 1*T6hbqPR + 1*T8hbqPR + 1*T10hbqhPR + 1*T12hbqhPR + 1*T14hbqhPR + 1*T18hbqhPR.x
+
+#Regressions
+iVIC ~ REWP + FN
+sVIC ~ REWP + FN
+iVIC ~ PILT.P + PILT.N
+sVIC ~ PILT.P + PILT.N
+iVIC ~ MDD + SAD
+sVIC ~ MDD + SAD
+'
+
+fit.HBQ.growth <- growth(HBQ.growth, data=DISS_do04_exp_hbq, missing="FIML", estimator="MLR")
+
+summary(fit.HBQ.growth, fit.measures=T, standardized=T)
+
+DISS_do04_exp_hbq$mean_vic <- rowMeans(DISS_do04_exp_hbq[,c("T1hbqpPR.x","T3hbqpPR.x","T5hbqpPR.x","T6hbqPR","T8hbqPR","T10hbqhPR","T12hbqhPR","T14hbqhPR","T18hbqhPR.x")], na.rm=TRUE)/rowSums(!is.na(DISS_do04_exp_hbq[,c("T1hbqpPR.x","T3hbqpPR.x","T5hbqpPR.x","T6hbqPR","T8hbqPR","T10hbqhPR","T12hbqhPR","T14hbqhPR","T18hbqhPR.x")]))
+
+summary(lm(rewp_r ~ mean_vic, DISS_do04_exp_hbq))
+summary(lm(fn_r ~ mean_vic, DISS_do04_exp_hbq))
+summary(lm(p2_r ~ mean_vic, DISS_do04_exp_hbq))
+
+summary(lm(Keep_prop ~ mean_vic, DISS_do04_exp_hbq))
+summary(lm(Reward_bias_20 ~ mean_vic, DISS_do04_exp_hbq))
+summary(lm(S5cdic_bdi_perc ~ mean_vic, DISS_do04_exp_hbq)) #*
+summary(lm(S5_SIASSPS ~ mean_vic, DISS_do04_exp_hbq))
+```
 
 # 5. Other measures of Social phobia
 ```{r}
@@ -284,6 +322,9 @@ summary(lm(Keep_prop ~ rewp_r, DISS_do04))
 summary(lm(Keep_prop ~ fn_r, DISS_do04))
 
 summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
+
+## Peer relations
+summary(lm(Keep_prop~T18hbqhPS, DISS_do04))
 ```
 
 #7. Extension of Frontiers paper with peer victimization)
@@ -447,6 +488,21 @@ summary(lm(rewp_REJ ~ S5cdic_bdi_perc + S5_SIASSPS + T20age + sex_f + PDSIII_Rac
 summary(lm(rewp_REJ ~ S5cdic_bdi_perc + S5_SIASSPS, DISS_do04))
 ```
 
+
+# Analyses for Katherine
+```{r}
+crunch_new <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_01_27_21.sav")
+
+DISS_do04_new <- merge(DISS_do04_full, crunch_new, by="Subid")
+
+summary(lm(rewp_r~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+summary(lm(rewp275375_r~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+
+summary(lm(rewp_r~anhed_Z_AD + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+summary(lm(rewp_r~BPFSC_total_16up + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+
+summary(lm(BPFSC_total_16up~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+```
 
 
 # . Closing out

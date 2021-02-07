@@ -1,5 +1,5 @@
 ---
-title: "Data prep script 4: Pulling needed peer relations variables"
+title: "Data prep script 4: Pulling needed HBQ variables"
 author: "Brent Rappaport"
 date: "`r format(Sys.time(),  '%Y-%m-%d')`"
 output:
@@ -47,7 +47,7 @@ renv::restore()
 
 ## 1.4. Set seed
 ```{r}
-     set.seed(8675309)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5 Load Data
@@ -55,25 +55,52 @@ Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
 # Load HBQ
 data_hbq <- read.csv("../../CRUNCH/-HBQ/HBQ_dataset.csv")
-data_hbq_t1 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T1 HBQ-P CL_BT (10 24 16).sav")
-data_hbq_t3 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T3 HBQ-P CL_BT (10 24 16).sav")
-data_hbq_t5 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T5 HBQ-P CL_BT (10 24 16).sav")
-data_hbq_t18 <- expss::read_spss("../../CRUNCH/-HBQ/R01 PDS-III Imaging T18 HBQ-P (9 7 17).sav")
+# data_hbq_t1 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T1 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t3 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T3 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t5 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T5 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t6 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T6 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t8 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T8 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t10 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T10 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t12 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T12 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t14 <- expss::read_spss("../../CRUNCH/-HBQ/R01 Val PDS T14 HBQ-P CL_BT (10 24 16).sav")
+# data_hbq_t18 <- expss::read_spss("../../CRUNCH/-HBQ/R01 PDS-III Imaging T18 HBQ-P (9 7 17).sav")
+
+data_hbq$Subid <- as.integer(data_hbq$Subid)
+
 data_hbq_t1$Subid <- as.integer(data_hbq_t1$Subid)
 data_hbq_t3$Subid <- as.integer(data_hbq_t3$Subid)
 data_hbq_t5$Subid <- as.integer(data_hbq_t5$Subid)
+data_hbq_t7$Subid <- as.integer(data_hbq_t6$Subid)
+data_hbq_t8$Subid <- as.integer(data_hbq_t8$Subid)
+data_hbq_t10$Subid <- as.integer(data_hbq_t10$Subid)
+data_hbq_t12$Subid <- as.integer(data_hbq_t12$Subid)
+data_hbq_t14$Subid <- as.integer(data_hbq_t14$Subid)
 data_hbq_t18$Subid <- as.integer(data_hbq_t18$Subid)
+
+for (m in c(1,3,5,6,8,10,12,14,18)) {
+  eval(parse(text=paste0("data_hbq_t",m,"$Subid <- as.integer(data_hbq_t",m,"$Subid)")))
+}
+
+DISS_cleaning04_hbq <- data_hbq
 
 DISS_cleaning04_hbq <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18))
 rm(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18)
 ```
 
+```{r}
+DISS_cleaning04_hbq$T6hbqPR <- DISS_cleaning04_hbq$T6hbqhPR
+DISS_cleaning04_hbq$T6hbqPR[!is.na(DISS_cleaning04_hbq$T6hbqpPR)] <- DISS_cleaning04_hbq$T6hbqpPR[!is.na(DISS_cleaning04_hbq$T6hbqpPR)] 
+
+DISS_cleaning04_hbq$T8hbqPR <- DISS_cleaning04_hbq$T8hbqhPR
+DISS_cleaning04_hbq$T8hbqPR[!is.na(DISS_cleaning04_hbq$T8hbqpPR)] <- DISS_cleaning04_hbq$T8hbqpPR[!is.na(DISS_cleaning04_hbq$T8hbqpPR)] 
+```
+
 ## 1.6 Remove unneeded variables
 ```{r}
-hbq_measures <- c("T1hbqpPR","T3hbqpPR","T5hbqpPR","T18hbqhPR")
+# hbq_measures <- c("T1hbqpPR","T3hbqpPR","T5hbqpPR","T18hbqhPR")
 
-DISS_cleaning04_hbq <- DISS_cleaning04_hbq %>%
-  dplyr::select("Subid",hbq_measures)
+# DISS_cleaning04_hbq <- DISS_cleaning04_hbq %>%
+  # dplyr::select("Subid",hbq_measures)
 ```
 
 ## 1.7 Reverse score HBQ scales
@@ -82,7 +109,6 @@ for (m in c(1,3,5)) {
   eval(parse(text=paste0("DISS_cleaning04_hbq$T",m,"hbqpPRr <- 5-DISS_cleaning04_hbq$T",m,"hbqpPR"))) 
   }
 DISS_cleaning04_hbq$T18hbqhPRr <- 5-DISS_cleaning04_hbq$T18hbqhPR
-
 ```
 
 ## 1.8 Calculate early peer victimization score

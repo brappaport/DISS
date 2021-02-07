@@ -169,65 +169,41 @@ library(semTools)
 library(semPlot)
 
 simple_model <- '
-#Define latent variables
-PILT.P =~ 1*Reward_bias_20_z
-PILT.N =~ 1*Loss_bias_20_z
-REWP =~ 1*rewp_r_z
-FN =~ 1*fn_r_z
-MDD =~ 1*S5cdic_bdi_perc_z
-SAD =~ 1*S5_SIASSPS_z
-
 #Define residual error
-PILT.P ~~ PILT.P
-PILT.N ~~ PILT.N
-REWP ~~ REWP
-FN ~~ FN
-MDD ~~ MDD
-SAD ~~ SAD
+# Reward_bias_20_z ~~ Reward_bias_20_z
+# Loss_bias_20_z ~~ Loss_bias_20_z
+# rewp_r_z ~~ rewp_r_z
+# fn_r_z ~~ fn_r_z
+# S5cdic_bdi_perc_z ~~ S5cdic_bdi_perc_z
+# S5_SIASSPS_z ~~ S5_SIASSPS_z
 
 #Define correlations
-PILT.P ~~ PILT.N
-REWP ~~ FN
-MDD ~~ SAD
+Reward_bias_20_z ~~ Loss_bias_20_z
+rewp_r_z ~~ fn_r_z
+S5cdic_bdi_perc_z ~~ S5_SIASSPS_z
 '
 
 full_model <- '
-#Define latent variables
-PILT.P =~ 1*Reward_bias_20_z
-PILT.N =~ 1*Loss_bias_20_z
-REWP =~ 1*rewp_r_z
-FN =~ 1*fn_r_z
-MDD =~ 1*S5cdic_bdi_perc_z
-SAD =~ 1*S5_SIASSPS_z
-
-#Define residual error
-PILT.P ~~ PILT.P
-PILT.N ~~ PILT.N
-REWP ~~ REWP
-FN ~~ FN
-MDD ~~ MDD
-SAD ~~ SAD
-
 #Define correlations
-PILT.P ~~ PILT.N
-REWP ~~ FN
-MDD ~~ SAD
+Reward_bias_20_z ~~ Loss_bias_20_z
+rewp_r_z ~~ fn_r_z
+S5cdic_bdi_perc_z ~~ S5_SIASSPS_z
 
 #Define hypothesized regressions
 
 #Aim 1
-PILT.P ~ REWP
-PILT.N ~ FN
+Reward_bias_20_z ~ rewp_r_z
+Loss_bias_20_z ~ fn_r_z
 
 #Aim 2
-REWP ~ MDD
-FN ~ MDD
-FN ~ SAD
+rewp_r_z ~ S5cdic_bdi_perc_z
+fn_r_z ~ S5cdic_bdi_perc_z
+fn_r_z ~ S5_SIASSPS_z
 
 #Aim 3
-PILT.P ~ MDD
-PILT.N ~ MDD
-PILT.N ~ SAD
+Reward_bias_20_z ~ S5cdic_bdi_perc_z
+Loss_bias_20_z ~ S5cdic_bdi_perc_z
+Loss_bias_20_z ~ S5_SIASSPS_z
 '
 
 fit_simple_model <- sem(simple_model, data=DISS_do02, missing="FIML", estimator="MLR")

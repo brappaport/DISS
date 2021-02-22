@@ -48,7 +48,7 @@ In addition to an overall measure of reward bias and loss avoidance in each of t
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(919)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5 Load Data
@@ -239,12 +239,12 @@ CLEAN_piltp_data <- piltp_data_RB1 %>%
          Reward_bias_20_12quant = (log((Rich_Correct_20_12quant*Lean_Incorrect_20_12quant)/(Rich_Incorrect_20_12quant*Lean_Correct_20_12quant)))*.5,
          Reward_bias_20_123quant = (log((Rich_Correct_20_123quant*Lean_Incorrect_20_123quant)/(Rich_Incorrect_20_123quant*Lean_Correct_20_123quant)))*.5,
          Reward_bias_20_1234quant = (log((Rich_Correct_20_1234quant*Lean_Incorrect_20_1234quant)/(Rich_Incorrect_20_1234quant*Lean_Correct_20_1234quant)))*.5,
-         Disc_20 = (log((Rich_Correct_20*Lean_Correct_20)/(Rich_Incorrect_20*Lean_Incorrect_20)))*.5) %>%
+         PILTP_Disc_20 = (log((Rich_Correct_20*Lean_Correct_20)/(Rich_Incorrect_20*Lean_Incorrect_20)))*.5) %>%
   
-  pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Reward_bias_20","Reward_bias_20_12quant","Reward_bias_20_123quant","Reward_bias_20_1234quant","Disc_20"))
+  pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Reward_bias_20","Reward_bias_20_12quant","Reward_bias_20_123quant","Reward_bias_20_1234quant","PILTP_Disc_20"))
 
 CLEAN_piltp_data$Reward_bias_20 <- rowMeans(CLEAN_piltp_data[,c("Reward_bias_20_block1","Reward_bias_20_block2")])
-CLEAN_piltp_data$Disc_20 <- rowMeans(CLEAN_piltp_data[,c("Disc_20_block1","Disc_20_block2")])
+CLEAN_piltp_data$PILTP_Disc_20 <- rowMeans(CLEAN_piltp_data[,c("PILTP_Disc_20_block1","PILTP_Disc_20_block2")])
 
 # Make infinite values NA
 is.na(CLEAN_piltp_data) <- sapply(CLEAN_piltp_data, is.infinite)
@@ -315,12 +315,12 @@ CLEAN_piltn_data <- piltn_data_RB1 %>%
          Loss_bias_20_12quant = (log((Rich_Correct_20_12quant*Lean_Incorrect_20_12quant)/(Rich_Incorrect_20_12quant*Lean_Correct_20_12quant)))*.5,
          Loss_bias_20_123quant = (log((Rich_Correct_20_123quant*Lean_Incorrect_20_123quant)/(Rich_Incorrect_20_123quant*Lean_Correct_20_123quant)))*.5,
          Loss_bias_20_1234quant = (log((Rich_Correct_20_1234quant*Lean_Incorrect_20_1234quant)/(Rich_Incorrect_20_1234quant*Lean_Correct_20_1234quant)))*.5,
-         Disc_20 = (log((Rich_Correct_20*Lean_Correct_20)/(Rich_Incorrect_20*Lean_Incorrect_20)))*.5) %>%
+         PILTN_Disc_20 = (log((Rich_Correct_20*Lean_Correct_20)/(Rich_Incorrect_20*Lean_Incorrect_20)))*.5) %>%
   
-  pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Loss_bias_20","Loss_bias_20_12quant","Loss_bias_20_123quant","Loss_bias_20_1234quant","Disc_20"))
+  pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Loss_bias_20","Loss_bias_20_12quant","Loss_bias_20_123quant","Loss_bias_20_1234quant","PILTN_Disc_20"))
 
 CLEAN_piltn_data$Loss_bias_20 <- rowMeans(CLEAN_piltn_data[,c("Loss_bias_20_block1","Loss_bias_20_block2")])
-CLEAN_piltn_data$Disc_20 <- rowMeans(CLEAN_piltn_data[,c("Disc_20_block1","Disc_20_block2")])
+CLEAN_piltn_data$PILTN_Disc_20 <- rowMeans(CLEAN_piltn_data[,c("PILTN_Disc_20_block1","PILTN_Disc_20_block2")])
 
 # Make infinite values NA
 is.na(CLEAN_piltn_data) <- sapply(CLEAN_piltn_data, is.infinite)

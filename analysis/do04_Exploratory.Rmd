@@ -56,7 +56,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(919)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5. Load data
@@ -107,7 +107,7 @@ sum(!is.na(DISS_do04_exp$S5SPS6_score.x))
 Conduct multiple imputation using package 'mice' and the following steps outlined here: 
 http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
 ```{r}
-# DISS_do01.imp <- mice(DISS_do01[,c(2:5,10:13,18:20)], m = 10, method = 'pmm', seed=919) #generate 10 imputed datasets
+# DISS_do01.imp <- mice(DISS_do01[,c(2:5,10:13,18:20)], m = 10, method = 'pmm', seed=314) #generate 10 imputed datasets
 # summary(DISS_do01.imp)
 
 # DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
@@ -140,48 +140,27 @@ summary(lm(p2_r ~ S5cdic_bdi_perc + S5_SIASSPS + T20age + sex_f + PDSIII_Race_f 
 summary(lm(p2_r ~ S5cdic_bdi_perc + S5_SIASSPS, DISS_do04))
 ```
 
+# 3. With N1 component
+```{r}
+summary(lm(n1_r ~ Reward_bias_20 + Loss_bias_20 + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need, DISS_do04))
+summary(lm(n1_r ~ Reward_bias_20 + Loss_bias_20, DISS_do04))
+
+summary(lm(n1_r ~ S5cdic_bdi_perc + S5_SIASSPS + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need, DISS_do04))
+summary(lm(n1_r ~ S5cdic_bdi_perc + S5_SIASSPS, DISS_do04))
+
+summary(lm(n1_r ~ T20_ADHD, DISS_do04_exp))
+```
+
 # 4. Other measures of MDD
 ```{r}
-#S5MDDCore
-summary(lm(rewp_r ~ S5MDDCore, DISS_do04))
-summary(lm(fn_r ~ S5MDDCore, DISS_do04))
-summary(lm(p2_r ~ S5MDDCore, DISS_do04))
-
-#T20MDDCore
-summary(lm(rewp_r ~ T20MDDCore, DISS_do04))
-summary(lm(fn_r ~ T20MDDCore, DISS_do04))
-summary(lm(p2_r ~ T20MDDCore, DISS_do04))
-
-#S5AvgMDDCore
-summary(lm(rewp_r ~ S5AvgMDDCore, DISS_do04))
-summary(lm(fn_r ~ S5AvgMDDCore, DISS_do04))
-summary(lm(p2_r ~ S5AvgMDDCore, DISS_do04))
-
-#S5AvgMDDCore
-summary(lm(rewp_r ~ S5AvgMDDCore, DISS_do04))
-summary(lm(fn_r ~ S5AvgMDDCore, DISS_do04))
-summary(lm(p2_r ~ S5AvgMDDCore, DISS_do04))
-
-#T20_MDD
-summary(lm(rewp_r ~ T20_MDD, DISS_do04))
-summary(lm(fn_r ~ T20_MDD, DISS_do04))
-summary(lm(p2_r ~ T20_MDD, DISS_do04))
-
-#T20_MDD
-summary(lm(rewp_r ~ T20_MDD, DISS_do04))
-summary(lm(fn_r ~ T20_MDD, DISS_do04))
-summary(lm(p2_r ~ T20_MDD, DISS_do04))
-
-#T1_MDD
-summary(lm(rewp_r ~ T1MDDCore, DISS_do04))
-summary(lm(fn_r ~ T1MDDCore, DISS_do04))
-summary(lm(p2_r ~ T1MDDCore, DISS_do04))
-
-#rel_MDDBP_01
 DISS_do04$rel_MDDBP_01 <- ifelse(DISS_do04$rel_MDDBP>=1,1,0)
-summary(lm(rewp_r ~ rel_MDDBP_01, DISS_do04))
-summary(lm(fn_r ~ rel_MDDBP_01, DISS_do04))
-summary(lm(p2_r ~ rel_MDDBP_01, DISS_do04))
+
+for (m in c("T20MDDCore","S5AvgMDDCore","T20_MDD","T1MDDCore","rel_MDDBP_01")){
+  for (e in c("rewp_r","fn_r","p2_r","n1_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04))"))))
+  }}
 ```
 
 ## 4.1 Growth models
@@ -209,11 +188,11 @@ sMDD ~ PILT.P + PILT.N
 iMDD ~ MDD + SAD
 sMDD ~ MDD + SAD
 
-iMDD ~ sex.x + T20age.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need
-sMDD ~ sex.x + T20age.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need
+iMDD ~ sex.x + T20age.x + Income_to_Need
+sMDD ~ sex.x + T20age.x + Income_to_Need
 '
 fit.MDDCORE.growth <- growth(MDDCORE.growth, data=DISS_do04_exp, missing="FIML", estimator="MLR")
-beep(sound = 1, expr = NULL)
+# beep(sound = 1, expr = NULL)
 
 summary(fit.MDDCORE.growth, fit.measures=T, standardized=T)
 ```
@@ -264,6 +243,7 @@ DISS_do04_exp_hbq$mean_vic <- rowMeans(DISS_do04_exp_hbq[,c("T1hbqpPR.x","T3hbqp
 summary(lm(rewp_r ~ mean_vic, DISS_do04_exp_hbq))
 summary(lm(fn_r ~ mean_vic, DISS_do04_exp_hbq))
 summary(lm(p2_r ~ mean_vic, DISS_do04_exp_hbq))
+summary(lm(n1_r ~ mean_vic, DISS_do04_exp_hbq))
 
 summary(lm(Keep_prop ~ mean_vic, DISS_do04_exp_hbq))
 summary(lm(Reward_bias_20 ~ mean_vic, DISS_do04_exp_hbq))
@@ -277,37 +257,17 @@ summary(lm(S5_SIASSPS ~ mean_vic, DISS_do04_exp_hbq))
 summary(lm(rewp_r ~ T20_SOC, DISS_do04))
 summary(lm(fn_r ~ T20_SOC, DISS_do04))
 summary(lm(p2_r ~ T20_SOC, DISS_do04))
-
-#S5SOC
-summary(lm(rewp_r ~ S5SOC, DISS_do04))
-summary(lm(fn_r ~ S5SOC, DISS_do04))
-summary(lm(p2_r ~ S5SOC, DISS_do04))
+summary(lm(n1_r ~ T20_SOC, DISS_do04))
 ```
 
 # 5. BPD
 ```{r}
-summary(lm(rewp_r ~ S4BPFSC_NR, DISS_do04_exp))
-summary(lm(fn_r ~ S4BPFSC_NR, DISS_do04_exp))
-summary(lm(p2_r ~ S4BPFSC_NR, DISS_do04_exp))
-
-summary(lm(rewp_r ~ S4BPFSC_T, DISS_do04_exp))
-summary(lm(fn_r ~ S4BPFSC_T, DISS_do04_exp))
-summary(lm(p2_r ~ S4BPFSC_T, DISS_do04_exp))
-
-summary(lm(rewp_r ~ S5BPFSC_NR, DISS_do04_exp))
-summary(lm(fn_r ~ S5BPFSC_NR, DISS_do04_exp))
-summary(lm(p2_r ~ S5BPFSC_NR, DISS_do04_exp))
-
-summary(lm(rewp_ACC ~ S5BPFSC_NR, DISS_do04_exp))
-summary(lm(rewp_REJ ~ S5BPFSC_NR, DISS_do04_exp))
-
-summary(lm(rewp_r ~ S5BPFSC_T, DISS_do04_exp))
-summary(lm(fn_r ~ S5BPFSC_T, DISS_do04_exp))
-summary(lm(p2_r ~ S5BPFSC_T, DISS_do04_exp))
-
-summary(lm(rewp_r ~ S5BPFSC_SH, DISS_do04_exp))
-summary(lm(fn_r ~ S5BPFSC_SH, DISS_do04_exp))
-summary(lm(p2_r ~ S5BPFSC_SH, DISS_do04_exp))
+for (m in c("S4BPFSC_NR","S4BPFSC_T","S5BPFSC_NR","S5BPFSC_T","S5BPFSC_SH")){
+  for (e in c("rewp_r","fn_r","p2_r","n1_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04_exp))"))))
+  }}
 ```
 
 # 6. Voting behavior
@@ -320,6 +280,8 @@ summary(lm(Keep_prop ~ Loss_bias_20, DISS_do04))
 
 summary(lm(Keep_prop ~ rewp_r, DISS_do04))
 summary(lm(Keep_prop ~ fn_r, DISS_do04))
+summary(lm(Keep_prop ~ p2_r, DISS_do04))
+summary(lm(Keep_prop ~ n1_r, DISS_do04))
 
 summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
 
@@ -342,34 +304,14 @@ ggplot(DISS_do04, aes(x=PPr_Avg_early, y=Keep_prop)) +
 
 # 7. Post-task questionnaire
 ```{r}
-summary(lm(rewp_r ~ belonging, DISS_do04))
-summary(lm(fn_r ~ belonging, DISS_do04))
-summary(lm(p2_r ~ belonging, DISS_do04))
-
-summary(lm(rewp_r ~ control, DISS_do04))
-summary(lm(fn_r ~ control, DISS_do04))
-summary(lm(p2_r ~ control, DISS_do04))
-
-summary(lm(rewp_r ~ meaningful_existence, DISS_do04))
-summary(lm(fn_r ~ meaningful_existence, DISS_do04))
-summary(lm(p2_r ~ meaningful_existence, DISS_do04))
-
-summary(lm(rewp_r ~ task_disengagement, DISS_do04))
-summary(lm(fn_r ~ task_disengagement, DISS_do04))
-summary(lm(p2_r ~ task_disengagement, DISS_do04))
-
-summary(lm(rewp_r ~ preoccupation_with_exclusion, DISS_do04)) #*
-summary(lm(fn_r ~ preoccupation_with_exclusion, DISS_do04))
-summary(lm(p2_r ~ preoccupation_with_exclusion, DISS_do04))
-
-summary(lm(rewp_r ~ self_esteem, DISS_do04))
-summary(lm(fn_r ~ self_esteem, DISS_do04))
-summary(lm(p2_r ~ self_esteem, DISS_do04))
-
-summary(lm(rewp_r ~ survivor, DISS_do04))
-summary(lm(fn_r ~ survivor, DISS_do04))
-summary(lm(p2_r ~ survivor, DISS_do04))
+for (m in c("belonging","control","meaningful_existence","task_disengagement","preoccupation_with_exclusion","self_esteem","survivor")){
+  for (e in c("rewp_r","fn_r","p2_r","n1_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04_exp))"))))
+  }}
 ```
+Preoccupation with exclusion negatively related to RewP
 
 # 8. Income to needs
 ```{r}
@@ -403,59 +345,37 @@ ggplot(DISS_do04, aes(x=Income_to_Need, y=Loss_bias_20)) +
 
 # 9. Life events
 ```{r}
-# Stressful life events
-summary(lm(rewp_r ~ LEA_S5_N, DISS_do04_exp))
-summary(lm(fn_r ~ LEA_S5_N, DISS_do04_exp))
-summary(lm(p2_r ~ LEA_S5_N, DISS_do04_exp))
+for (m in c("LEA_S5_N","LEA_S4toS5_N","LEB_S5_N","LEB_S4toS5_N","LEB_N_PS",
+            "LE_romance_S5 + LE_otherrel_S5","LEB_S5_N*S5Income_to_Need","LEB_S5_N*Income_to_Need","LEB_S5_N*S5AvgMDDCore.x","LEB_S4toS5_N*S5MDDCore.x")){
+  for (e in c("rewp_r","fn_r","p2_r","n1_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04_exp))"))))
+  }}
 
-summary(lm(rewp_r ~ LEA_S4toS5_N, DISS_do04_exp))
-summary(lm(fn_r ~ LEA_S4toS5_N, DISS_do04_exp))
-summary(lm(p2_r ~ LEA_S4toS5_N, DISS_do04_exp))
+
 # Traumatic life events
-summary(lm(rewp_r ~ LEB_S5_N, DISS_do04_exp))
 summary(lm(fn_r ~ LEB_S5_N, DISS_do04_exp)) #*
-summary(lm(p2_r ~ LEB_S5_N, DISS_do04_exp))
+summary(lm(n1_r ~ LEB_S5_N, DISS_do04_exp)) #*
 
 summary(lm(rewp_r ~ LEB_S4toS5_N, DISS_do04_exp))
 summary(lm(fn_r ~ LEB_S4toS5_N, DISS_do04_exp))
 summary(lm(p2_r ~ LEB_S4toS5_N, DISS_do04_exp)) #*
+summary(lm(n1_r ~ LEB_S4toS5_N, DISS_do04_exp)) #**
+
+# Relationship life events
+summary(lm(fn_r ~ LE_romance_S5 + LE_otherrel_S5, data = DISS_do04_exp)) #*
+summary(lm(n1_r ~ LE_romance_S5 + LE_otherrel_S5, data = DISS_do04_exp)) #*
 
 # Preschool traumatic life events
 summary(lm(rewp_r ~ LEB_N_PS, DISS_do04_exp)) #* (wrong direction)
-summary(lm(fn_r ~ LEB_N_PS, DISS_do04_exp))
-summary(lm(p2_r ~ LEB_N_PS, DISS_do04_exp))
-
-# Relationship life events
-summary(lm(rewp_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
-summary(lm(fn_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
-summary(lm(p2_r ~ LE_romance_S5 + LE_otherrel_S5, DISS_do04_exp))
-
-# Traumatic life events*Scan 5 Income to Need
-summary(lm(rewp_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
-summary(lm(fn_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
-summary(lm(p2_r ~ LEB_S5_N*S5Income_to_Need, DISS_do04_exp))
-# Traumatic life events*Income to Need
-summary(lm(rewp_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
-summary(lm(fn_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
-summary(lm(p2_r ~ LEB_S5_N*Income_to_Need, DISS_do04_exp))
-
-# Traumatic life events*Cumulative depression
-summary(lm(rewp_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
-summary(lm(fn_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
-summary(lm(p2_r ~ LEB_S5_N*S5AvgMDDCore.x, DISS_do04_exp))
-
-# Recent traumatic life events*recent depression
-summary(lm(rewp_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
-summary(lm(fn_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
-summary(lm(p2_r ~ LEB_S4toS5_N*S5MDDCore.x, DISS_do04_exp))
 ```
 
 # 10. Bis/Bas
 ```{r}
 S5bis_bas <- c("S5BAS_C_drive","S5BAS_C_funseek","S5BAS_C_funseek2","S5BAS_C_reward","S5BAS_C_reward2","S5BIS_C","S5BIS_C2","S5BAS_C_reward_revised","S5BAS_C_reward_revised2","S5BIS_C_revised")
-elec
 
-for(c in c("rewp_r","fn_r","p2_r")) {
+for(c in c("rewp_r","fn_r","p2_r","n1_r")) {
   for (m in S5bis_bas){
     print(paste0("###################### COMPONENT: ",c," ######################"))
     print(paste0("###################### SYMPTOM MEASURE: ",m," ######################"))
@@ -471,9 +391,7 @@ ggplot(DISS_do04_exp, aes(y=fn_r, x=S5BIS_C2)) +
   stat_smooth(method=lm)
 ```
 
-
-
-# . Raw components scores
+# 11. Raw components scores
 ```{r}
 summary(lm(rewp_ACC ~ Reward_bias_20 + Loss_bias_20 + T20age + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need, DISS_do04))
 summary(lm(rewp_ACC ~ Reward_bias_20 + Loss_bias_20, DISS_do04))
@@ -489,13 +407,15 @@ summary(lm(rewp_REJ ~ S5cdic_bdi_perc + S5_SIASSPS, DISS_do04))
 ```
 
 
-# Analyses for Katherine
+# 12. Analyses for Katherine
 ```{r}
 crunch_new <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_01_27_21.sav")
-
 DISS_do04_new <- merge(DISS_do04_full, crunch_new, by="Subid")
 
-summary(lm(rewp_r~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
+summary(lm(rewp_r~T14hbqhPS, DISS_do04_new))
+summary(lm(rewp_r~T18hbqhPS, DISS_do04_new))
+
+summary(lm(rewp_r~S3hbqhPS, DISS_do04_new))
 summary(lm(rewp275375_r~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
 
 summary(lm(rewp_r~anhed_Z_AD + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
@@ -503,6 +423,32 @@ summary(lm(rewp_r~BPFSC_total_16up + sex.x + negval_Z_AD + Income_to_Need_PS, DI
 
 summary(lm(BPFSC_total_16up~S3hbqhPS + sex.x + negval_Z_AD + Income_to_Need_PS, DISS_do04_new))
 ```
+Prosocial related more to RewP to IG than Doors?
+
+# 13. Observational coding
+```{r}
+for (m in c("T135meanEMO","T135meanAGR")){
+  for (e in c("rewp_r","fn_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04_exp))"))))
+  }}
+
+summary(lm(fn_r ~ T135meanEMO, DISS_do04_exp))
+summary(lm(fn_r ~ T135meanEMO + T20age.x + sex.x + Income_to_Need, DISS_do04_exp))
+summary(lm(fn_r ~ T135meanEMO + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need, DISS_do04_exp))
+summary(lm(fn_r ~ T135meanEMO + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x + Income_to_Need, DISS_do04_exp))
+
+for (m in c("S5cope_OC_C","S5cope_UC_C","S5cope_OC_P","S5cope_UC_P")){
+  for (e in c("rewp_r","fn_r","p2_r","n1_r")){
+    print(paste0("##############################",m,"##############################"))
+    print(paste0("##############################",e,"##############################"))
+      print(eval(parse(text=paste0("summary(lm(",e,"~",m,", DISS_do04_exp))"))))
+  }}
+```
+N=101
+FN & Neuroticism (positively associated)
+FN & Curiosity (negatively associated)
 
 
 # . Closing out

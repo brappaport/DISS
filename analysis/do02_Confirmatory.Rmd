@@ -50,7 +50,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(919)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5. Load data

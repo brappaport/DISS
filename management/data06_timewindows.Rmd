@@ -100,32 +100,33 @@ DISS_cleaning_tw_components <- DISS_cleaning_tw_time %>%
             rewp275375 = mean(Cz[between(Time,275,375)]),
             rewp250350 = mean(Cz[between(Time,250,350)]),
             p2 = mean(Cz[between(Time,162,262)]),
-            n2 = mean(Cz[between(Time,124,224)]))
+            n1 = mean(Cz[between(Time,124,224)]))
 ```
 
 ## 2.1 Check differences between conditions using t-test
 ```{r}
 rewp_ttest <- t.test(DISS_cleaning_tw_components$rewp ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
 p2_ttest <- t.test(DISS_cleaning_tw_components$p2 ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
-n2_ttest <- t.test(DISS_cleaning_tw_components$n2 ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
+n1_ttest <- t.test(DISS_cleaning_tw_components$n1 ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
 
 #Apply FDR correction
-p.adjust(c(rewp_ttest[3],p2_ttest[3],n2_ttest[3]), "fdr")
+p.adjust(c(rewp_ttest[3],p2_ttest[3],n1_ttest[3]), "fdr")
 ```
 
 # 3. Create residualized scores
 ```{r}
 #Make data into wide format
 DISS_cleaning_tw_components_wide <- DISS_cleaning_tw_components %>%
-  pivot_wider(id_cols=Subid, names_from=Condition, values_from=c(rewp,rewp275375,rewp250350,p2,n2))
+  pivot_wider(id_cols=Subid, names_from=Condition, values_from=c(rewp,rewp275375,rewp250350,p2,n1))
 
-component_list <- c("rewp","rewp275375","rewp250350","p2","n2")
+component_list <- c("rewp","rewp275375","rewp250350","p2")
 
 for (c in component_list){ 
     eval(parse(text=paste0("DISS_cleaning_tw_components_wide$",c,"_r <- stdres(lm(",c,"_ACC ~ ",c,"_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))"))) 
 }
 
-DISS_cleaning_tw_components_wide$fn_r <- stdres(lm(rewp_REJ ~ rewp_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$fn_r <- -1*stdres(lm(rewp_REJ ~ rewp_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$n1_r <- -1*stdres(lm(n1_REJ ~ n1_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
 DISS_cleaning06_tw <- DISS_cleaning_tw_components_wide
 ```
 

@@ -45,7 +45,7 @@ toc: yes
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(8675309)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5 Load Data

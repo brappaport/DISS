@@ -1,0 +1,247 @@
+---
+title: "Data prep script 8: Conducting multiple imputation of data"
+author: "Brent Rappaport"
+date: "`r format(Sys.time(),  '%Y-%m-%d')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Template Rmd
+editor_options:
+  chunk_output_type: console
+toc: yes
+---
+
+# About
+These are the primary analyses for Brent Rappaport's doctoral dissertation thesis: "Behavioral, neural, and psychiatric correlates of response to social feedback."
+
+# 1. Get Setup
+## 1.1. Clear everything & set width
+```{r echo=TRUE, results='hide', message=FALSE}
+    options(width=80) #Set width
+    options(scipen = 999) #Disable scientific notation
+    rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+## 1.2. Load Libraries
+```{r echo=TRUE, results='hide', message=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(MASS)       #runs robust linear models
+  library(sfsmisc)    #run robust F-test for linear models
+  library(MissMech)   #test of MCAR
+  library(naniar)     #handle missingness
+  library(mice)       #multiple imputation
+  library(miceadds)   #adding functions to mice
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(workflowr)  #helps with workflow
+```
+
+## 1.3. Get the Working Directory
+```{r}
+  here()
+```
+
+## 1.4. Set seed
+   Remember to set your seed AFTER you load libraries
+```{r}
+     set.seed(314)    #Set seed
+```
+
+## 1.5. Load data
+Remember to immediately rename and remove. Avoid overwriting old data.
+```{r}
+      load(file = "./data/DISS_cleaning07.RData")   
+      DISS_do01_full <- DISS_cleaning07  ## first create new data
+      rm("DISS_cleaning07")             ## remove old data
+      
+      load(file = "./data/DISS_cleaning06_pca.RData")
+      DISS_do02_grandaverage <- DISS_cleaning06_pca
+      rm("DISS_cleaning06_pca")
+      
+      load(file = "./data/DISS_cleaning06_tf2sf1.RData")
+      DISS_do02_tf2sf1 <- DISS_cleaning06_tf2sf1
+      rm("DISS_cleaning06_tf2sf1")
+      
+      load(file = "./data/DISS_cleaning06_tf4sf1.RData")
+      DISS_do02_tf4sf1 <- DISS_cleaning06_tf4sf1
+      rm("DISS_cleaning06_tf4sf1")
+
+      load(file = "./data/DISS_cleaning06_tf7sf1.RData")
+      DISS_do02_tf7sf1 <- DISS_cleaning06_tf7sf1
+      rm("DISS_cleaning06_tf7sf1")
+```      
+
+## 1.6. Subset data
+```{r}
+# List of variables to include in subsetted data
+all_measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","Reward_bias_20_block1","Reward_bias_20_block2","Loss_bias_20_block1","Loss_bias_20_block2","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","T20MDDCore","PILTP_Disc_20","PILTN_Disc_20")
+
+# Measures of interest
+measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","Reward_bias_20_block1","Reward_bias_20_block2","Loss_bias_20_block1","Loss_bias_20_block2","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
+
+# Make appropriate covariates factors
+factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
+for (f in factors_list){ eval(parse(text=paste0("DISS_do01_full$",f,"_f <- with(DISS_do01_full, as.factor(",f,"))"))) }
+
+# Effects code all factors
+contrasts(DISS_do01_full$sex_f) <- contr.sum(2); contrasts(DISS_do01_full$PDSIII_Race_f) <- contr.sum(3); contrasts(DISS_do01_full$PDSIII_Hispanic_f) <- contr.sum(2); contrasts(DISS_do01_full$S5psychmed_dos_f) <- contr.sum(2)
+
+DISS_do01 <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
+    drop_na(rewp_r, T20age) %>%
+    dplyr::select(c(Subid, all_of(all_measures_list), all_of(factors_list), paste0(factors_list[1:3],"_f")))
+
+# Make lists to be used below
+var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
+var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f")
+var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
+```
+
+# 3. Check for univariate & multivariate outliers (not including covariates)
+Do NOT include covariates, otherwise this leads to excuding the 3 Hispanic subjects
+```{r Outliers}
+#Univariate
+apply(DISS_do01[,var_interest_f[1:6]], 2, function(x) which(x > (mean(x, na.rm=T)+3*sd(x, na.rm=T)) | x < (mean(x, na.rm=T)-3*sd(x, na.rm=T))))
+
+#Multivariate
+data_p <- psych::outlier(DISS_do01[,var_interest_nocovar],plot = T,bad=10,na.rm=T)
+rows_to_exclude <- which(pchisq(data_p,df=6,ncp=0,lower.tail = F,log.p = F)<.001)
+rows_to_exclude
+
+DISS_do01_full_nooutliers <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
+    drop_na(rewp_r, T20age) %>%
+    dplyr::slice(-rows_to_exclude)
+DISS_do01_nooutliers <- DISS_do01 %>%
+    dplyr::slice(-rows_to_exclude)
+
+length(DISS_do01_nooutliers$Subid)
+```
+1 removed as multivariate outlier
+
+# 4. Missing data
+```{r}
+sum(complete.cases(DISS_do01$rewp_r)) #number of participants that completed IG with good data
+
+DISS_do01 %>% #missing data for each variable
+  dplyr::select(c(measures_list,paste0(factors_list[1:3],"_f"))) %>%
+  miss_var_summary(order=FALSE)
+```
+N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BDI/CDI measure (Subids: 100,101,121,199,584), 0 missing SIAS/SPS, 16 missing PILT, 9 missing DOS psychotropic medication use.
+
+## 4.1. Test MCAR
+```{r}
+TestMCARNormality(data=DISS_do01_nooutliers[,var_interest_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
+```
+The non-parametric test shows that there is not sufficient evidence to rejection MCAR asssumption, therefore data are assumed to be missing completely at random.
+
+"So the results of the test of MCAR for homogenity of covariances show us, that mcar was not rejected because of non-normality or heteroscedasticity. If the Hawkins-test becomes significant, the „MissMech“-package performs a nonparametric test on homoscedasticity. This way, it can show through the method of elimination if non-normality or heteroscedasticity is a problem." (https://statistics.ohlsen-web.de/multiple-imputation-with-mice/)
+
+## 4.2. Multiple imputation
+Conduct multiple imputation using package 'mice' and the following steps outlined here: 
+http://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/mi.html
+```{r}
+md.pattern(DISS_do01[,var_interest_f])
+
+m0 <- mice(DISS_do01_nooutliers[,c(var_interest_f, "S5psychmed_dos")], maxit=0)
+meth <- m0$method
+meth[names(meth) %in% c("S5psychmed_dos")] <- ""
+pred <- m0$predictorMatrix
+pred[, colnames(pred) %in% c("S5psychmed_dos")] <- 0   
+
+DISS_do01.imp <- mice(DISS_do01_nooutliers[,c(var_interest_f, "S5psychmed_dos")], predictorMatrix=pred, method=meth, m=10, seed=314)
+
+# DISS_do01.imp <- mice(DISS_do01_nooutliers[,c(var_interest_f, "S5psychmed_dos")], m = 10, method = 'pmm', seed=314) #generate 10 imputed datasets
+summary(DISS_do01.imp)
+
+DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
+
+DISS_do01.comp$Reward_bias_20.NA <- cci(DISS_do01_nooutliers$Reward_bias_20)
+DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01_nooutliers$Loss_bias_20)
+DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01_nooutliers$S5cdic_bdi_perc)
+DISS_do01.comp$S5psychmed_dos.NA <- cci(DISS_do01_nooutliers$S5psychmed_dos)
+
+# Reward bias
+ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20)) + 
+  geom_jitter(aes(color=Reward_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+
+# Loss avoidance
+ggplot(DISS_do01.comp, aes(x = .imp, y = Loss_bias_20)) + 
+  geom_jitter(aes(color=Loss_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+
+# Current depression severity
+ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc)) + 
+  geom_jitter(aes(color=S5cdic_bdi_perc.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+
+ggplot(DISS_do01.comp, aes(x = .imp, y = S5psychmed_dos)) + 
+  geom_jitter(aes(color=S5psychmed_dos.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+```
+
+## 4.2.1. Check imputed values (line indicates mean)
+```{r}
+# Reward bias
+ggplot(DISS_do01.comp, aes(x = .imp, y = Reward_bias_20)) + 
+  geom_jitter(aes(color=Reward_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+
+# Loss avoidance
+ggplot(DISS_do01.comp, aes(x = .imp, y = Loss_bias_20)) + 
+  geom_jitter(aes(color=Loss_bias_20.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+
+# Current depression severity
+ggplot(DISS_do01.comp, aes(x = .imp, y = S5cdic_bdi_perc)) + 
+  geom_jitter(aes(color=S5cdic_bdi_perc.NA), show.legend = FALSE, width = .2) +
+  geom_line(stat="summary", show.legend = FALSE)
+```
+
+# 6. Standardize measures
+Center and standardize all measures to make b estimates from multiple regressions more interpretable.
+```{r}
+#convert into datlist
+DISS_do01.dat <- miceadds::mids2datlist(DISS_do01.imp)
+#scale/standardize datlist
+DISS_do01.dat_z <- scale_datlist(datlist=DISS_do01.dat, orig_var=measures_list[c(1:4,9:12)], trafo_var=paste0(measures_list[c(1:4,9:12)],"_z"), weights=NULL, M=0, SD=1, digits=NULL)
+#convert back to mids
+DISS_do01.imp_z <- miceadds::datlist2mids(DISS_do01.dat_z)
+
+#standardize measures in non-imputed dataset
+for (m in measures_list){
+ eval(parse(text=paste0("DISS_do01$",m,"_z <- scale(DISS_do01$",m,", center=T, scale=T)")))
+}
+
+for (m in measures_list){
+ eval(parse(text=paste0("DISS_do01_nooutliers$",m,"_z <- scale(DISS_do01_nooutliers$",m,", center=T, scale=T)")))
+}
+```
+
+# 7. Save data
+```{r}
+#save non-imputed dataset w/ outliers
+save(DISS_do01, file="./data/DISS_do01.RData")
+#save non-imputed full dataset wo/ outliers
+save(DISS_do01_full_nooutliers, file="./data/DISS_do01_full.RData")
+#save non-imputed dataset wo/ outliers
+save(DISS_do01_nooutliers, file="./data/DISS_do01_nooutliers.RData")
+#save imputed dataset(s)
+save(DISS_do01.imp, file="./data/DISS_do01.imp.RData")
+#save standardized imputed dataset(s)
+save(DISS_do01.imp_z, file="./data/DISS_do01.imp_z.RData")
+```
+
+# 8. Closing out
+  In this step, go ahead and close out of the file and quit R without saving  
+  the work space.
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```
+

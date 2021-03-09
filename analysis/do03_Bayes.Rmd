@@ -20,7 +20,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
     options(scipen = 999) #Disable scientific notation
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -36,6 +36,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(psych)      #used for statistical analyses
   library(ggplot2)    #creates plots
   library(brms)       #run Bayes multiple regression analyses
+  library(cmdstanr)
   library(mice)       #multiple imputation
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
@@ -52,17 +53,17 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(919)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5. Load data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-      load(file = "./data/DISS_do01.RData")   
-      DISS_do02 <- DISS_do01  ## first create new data
-      rm("DISS_do01")             ## remove old data
+      load(file = "../work/data/DISS_do01_nooutliers.RData")       
+      DISS_do02_nooutliers <- DISS_do01_nooutliers
+      rm("DISS_do01_nooutliers")
       
-      load(file = "./data/DISS_do01.imp_z.RData")
+      load(file = "../work/data/DISS_do01.imp_z.RData")
       DISS_do02.imp_z <- DISS_do01.imp_z
       rm("DISS_do01.imp_z")
 ```      
@@ -129,22 +130,51 @@ mr.rewp_sym <- brm_multiple(family = gaussian,
     rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
     prior = c(prior(normal(0,5), class=Intercept),
               prior(normal(-0.1,2), class=b, coef=S5cdic_bdi_perc_z),
-              prior(normal(-0.07,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
               prior(normal(0,2), class=b, coef=T20age_z),
-              prior(normal(0,2), class=b, coef=sex_f1),
-              prior(normal(0,2), class=b, coef=PDSIII_Race_f1),
+              prior(normal(0,2), class=b, coef=sex_f2),
               prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
-              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f1),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f3),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f2),
               prior(normal(0,2), class=b, coef=Income_to_Need_z),
               prior(exponential(1), class = sigma)),
     iter=5000, warmup=1000, chains=4, cores=2,
     data=DISS_do02.imp_z,
+    save_pars=save_pars(all=TRUE),
+    sample_prior="yes",
+    seed=TRUE,
+    backend="cmdstanr",
     file="./analysis/mr.rewp_sym")
 summary(mr.rewp_sym)
 
 plot(mr.rewp_sym)
 conditional_effects(mr.rewp_sym)
 pp_check(mr.rewp_sym, nsamples=20)
+
+# Bayes Factor
+## Null model
+mr.rewp_sym_null <- brm_multiple(family = gaussian, 
+    rewp_r_z ~ 1 + S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z,
+    prior = c(prior(normal(0,5), class=Intercept),
+              prior(normal(0,2), class=b, coef=S5cdic_bdi_perc_z),
+              prior(normal(0,2), class=b, coef=S5_SIASSPS_z),
+              prior(normal(0,2), class=b, coef=T20age_z),
+              prior(normal(0,2), class=b, coef=sex_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f2),
+              prior(normal(0,2), class=b, coef=PDSIII_Race_f3),
+              prior(normal(0,2), class=b, coef=PDSIII_Hispanic_f2),
+              prior(normal(0,2), class=b, coef=Income_to_Need_z),
+              prior(exponential(1), class = sigma)),
+    iter=5000, warmup=1000, chains=4, cores=2,
+    data=DISS_do02.imp_z,
+    save_pars=save_pars(all=TRUE),
+    sample_prior="yes",
+    seed=314,
+    backend="cmdstanr",
+    file="./analysis/mr.rewp_sym_null")
+summary(mr.rewp_sym_null)
+
+bayes_factor(mr.rewp_sym, mr.rewp_sym_null)
 
 #Correlation
 f1 <- 
@@ -155,7 +185,7 @@ f1 <-
                 prior(normal(-0.1, 1), class = b),
                 prior(normal(0, 1), class = sigma)),
       chains = 4, cores = 4, 
-      seed = 919)
+      seed = 314)
 summary(f1)
 
 cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z, 
@@ -166,7 +196,7 @@ cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z,
                 prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
                 prior(lkj(1), class = rescor)),
       iter = 5000, warmup = 1000, chains = 4, cores = 2, 
-      seed = 919)
+      seed = 314)
 
 cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z, 
       family = student,
@@ -177,7 +207,7 @@ cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z,
                 prior(normal(0, 100), class = sigma, resp = S5cdic_bdi_perc_z),
                 prior(lkj(1), class = rescor)),
       iter = 2000, warmup = 500, chains = 4, cores = 2, 
-      seed = 919)
+      seed = 314)
 
 cor_test <- stan(file="robust_correlation.stan", data=DISS_do02.imp_z, 
                  iter=2000, warmup=500, chains=4, seed=919)
@@ -186,6 +216,12 @@ ggplot(DISS_do02.imp_z, aes(y=rewp_r_z, x=S5cdic_bdi_perc_z)) +
   geom_point()
 
 ```
+
+#### Bayes factor
+```{r}
+pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+```
+
 
 #### 5.3.4 FN/Sym-Bayes
 ```{r}

@@ -1,0 +1,52 @@
+---
+title: "Behavioral, neural, and psychiatric correlates of social feedback"
+author: "Brent Rappaport"
+bibliography: ["DISS-library.bib"]
+output: 
+  word_document:
+      reference_docx: "manuscript_style.docx"
+---
+
+```{r echo=TRUE, results='hide', message=FALSE, include=FALSE, cache=TRUE}
+    options(width=80) #Set width
+    #rm(list=ls())     #Remove everything from environment
+    cat("\014")       #Clear Console
+```
+
+```{r echo=FALSE, results='hide', message=FALSE, include=FALSE}
+  renv::restore()     #restore environment
+  library(knitr)      #allows rmarkdown files
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(broom)      #nice statistical output
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(citr)       #citation manager
+  library(papaja)     #apa style documents
+  library(workflowr)  #helps with workflow
+```
+
+# Abstract
+
+# 1. Introduction
+
+# 2. Methods
+
+## 2.1 Participants
+Participants completed all measures during the tenth assessment wave of the Preschool Depression Study (PDS; see Supplemental Materials for full chronology of study). In this study, Participants were initially screened at preschool age for the study using the Preschool Feelings Checklist (PFC) [@lubyPreschoolFeelingsChecklist2004] in order to recruit children with high and low symptoms of depression. Children were excluded if they presented with chronic illness, marked speech and/or language delays and/or neurologic or autism spectrum disorders. An additional 40 currently healthy children were added at school age. Of those, 118 participants completed the social feedback task. Of those, one participant was excluded due to technical errors during the social feedback task, and two participants were excluded due to intelligence quotients (IQ) below 70. Of those 115 remaining participants, 99 had completed and has useable data for the behavioral reward/loss task, 110 had completed a self-report measure of depression, and 115 had completed a self-report measure of social anxiety.  
+  
+## 2.2 Measures
+2.2.1 Depression severity  
+Depression severity was measured using the Child Depression Inventory–2 (CDI-2) [@kovacsChildrenDepressionInventory1992] for participants less than 18 years-old and Beck Depression Inventory–II (BDI–II) [@dozoisPsychometricEvaluationBeck1998] for participants 18 years-old and older. The CDI-2 includes 28 items scored on a three point Likert scale. The BDI-II includes 21 items scored on a four point Likert scale. Both measures assess self-reported depression symptoms in the past 2 weeks and have excellent internal consistency (CDI-2: $\alpha$=0.91; BDI-II: $\alpha$=0.91) and test-retest reliability (CDI-2: *r*=0.89; BDI-II: *r*=0.93) [@beckBeckDepressionInventoryII1996; @dozoisPsychometricEvaluationBeck1998; @kovacsChildrenDepressionInventory1992].
+
+### 2.2.2 Social anxiety severity  
+Social anxiety severity was measured using the Social Interaction Anxiety Scale (SIAS-6) and Social Phobia Scale (SPS-6) [@petersDevelopmentShortForm2012]—a scale that combines the two scales and was developed as an abbreviated version of the full SIAS/SPS [@mattickDevelopmentValidationMeasures1998] using Item Response Theory modeling. This scale includes 6 items rated on a five point Likert scale from each of the SIAS-6 and SPS-6, comprising one total scale. The SIAS/SPS-6 assesses self-reported current symptoms of social anxiety/phobia (with no specific time frame given) and has excellent internal consistency ($\alpha$ > 0.90) and test-retest reliability (*r* > 0.91) [@mattickDevelopmentValidationMeasures1998; @osmanSocialPhobiaSocial1998].
+  
+### 2.2.3 Covariates  
+Covariates in multiple regression models included age at time of task, sex, race (Caucasian, African American, or Other), Hispanic ethnicity, and socioeconomic status (i.e., income-to-needs ratio).
+  
+
+# 3. Results
+
+# 4. Discussion
+
+# References

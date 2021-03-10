@@ -120,39 +120,39 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
 
 ```{r Load data}
-      load(file = "../work/data/DISS_do01_full.RData")   
+      load(file = "../data/DISS_do01_full.RData")   
       DISS_do02_full_nooutliers <- DISS_do01_full_nooutliers
       rm("DISS_do01_full_nooutliers")
 
-      load(file = "../work/data/DISS_do01_nooutliers.RData")       
+      load(file = "../data/DISS_do01_nooutliers.RData")       
       DISS_do02_nooutliers <- DISS_do01_nooutliers
       rm("DISS_do01_nooutliers")
       
-      load(file = "../work/data/DISS_do01.RData")   
+      load(file = "../data/DISS_do01.RData")   
       DISS_do02 <- DISS_do01
       rm("DISS_do01")
       
-      load(file = "../work/data/DISS_do01.imp.RData")
+      load(file = "../data/DISS_do01.imp.RData")
       DISS_do02.imp <- DISS_do01.imp
       rm("DISS_do01.imp")
       
-      load(file = "../work/data/DISS_do01.imp_z.RData")
+      load(file = "../data/DISS_do01.imp_z.RData")
       DISS_do02.imp_z <- DISS_do01.imp_z
       rm("DISS_do01.imp_z")
       
-      load(file = "../work/data/DISS_cleaning06_pca.RData")
+      load(file = "../data/DISS_cleaning06_pca.RData")
       DISS_do02_grandaverage <- DISS_cleaning06_pca
       rm("DISS_cleaning06_pca")
       
-      load(file = "../work/data/DISS_cleaning06_tf2sf1.RData")
+      load(file = "../data/DISS_cleaning06_tf2sf1.RData")
       DISS_do02_tf2sf1 <- DISS_cleaning06_tf2sf1
       rm("DISS_cleaning06_tf2sf1")
       
-      load(file = "../work/data/DISS_cleaning06_tf4sf1.RData")
+      load(file = "../data/DISS_cleaning06_tf4sf1.RData")
       DISS_do02_tf4sf1 <- DISS_cleaning06_tf4sf1
       rm("DISS_cleaning06_tf4sf1")
 
-      load(file = "../work/data/DISS_cleaning06_tf7sf1.RData")
+      load(file = "../data/DISS_cleaning06_tf7sf1.RData")
       DISS_do02_tf7sf1 <- DISS_cleaning06_tf7sf1
       rm("DISS_cleaning06_tf7sf1")
 ```
@@ -165,8 +165,6 @@ var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_
 var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
 ```
 
-# Tables
-## Demographics
 ```{r}
 demo_table <- FullTable1(DISS_do02_nooutliers,
            vars=c("T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f","S5psychmed_dos"),
@@ -180,7 +178,6 @@ apa_table(as.data.frame(demo_table$table),
           note="N=9 missing recent psychotropic medication use. Mean (SD) for continuous variables or N (%) for categorical variables presented.")
 ```
 
-## Correlations
 ```{r Zero-order correlations, include=FALSE}
 zero_order_cor <- micombine.cor(DISS_do02.imp_z, variables=c("rewp_r_z","fn_r_z",
                                           "Reward_bias_20_z","Loss_bias_20_z",
@@ -212,18 +209,23 @@ while (i<7) {
   }
   meansd_list[,2:3] <- round(meansd_list[,2:3],2)
 }
-meansd_list$Mean_SD <- paste0(meansd_list$V2," (",meansd_list$V3,")") 
+meansd_list[,c("Mean SD")] <- paste0(meansd_list$V2," (",meansd_list$V3,")") 
 
 # Make correlation table
 zero_order_matrix <- matrix(NA, nrow=6, ncol=7)
 zero_order_matrix[upper.tri(zero_order_matrix)] <- zero_order_r[upper.tri(zero_order_r)]
 zero_order_matrix[lower.tri(zero_order_matrix)] <- zero_order_rse[lower.tri(zero_order_rse)]
 row.names(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
-zero_order_matrix[,7] <- meansd_list$Mean_SD
-colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety", "Mean_SD")
+zero_order_matrix[,7] <- meansd_list[,c("Mean SD")]
+colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety", "Mean SD")
 zero_order_matrix_full <-  as.data.frame(zero_order_matrix) %>%
-  dplyr::select(Mean_SD, everything())
+  dplyr::select(c("Mean SD"), everything())
 zero_order_matrix_full[is.na(zero_order_matrix_full)] <- "—"
+```
+```{r}
+apa_table(zero_order_matrix_full, 
+          landscape = TRUE, 
+          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while residual standard errors (rse) are presented in the lower diagonal")
 ```
 
 ```{r DISS_make_table, include=FALSE}
@@ -244,14 +246,6 @@ DISS_make_table <- function(first_model, second_model, predictors) {
 }
 ```
 
-```{r}
-apa_table(zero_order_matrix_full, 
-          landscape = TRUE, 
-          # col.names = c("Mean (SD)", "RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety"),
-          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while residual standard errors (rse) are presented in the lower diagonal")
-```
-
-## Association between RewP/FN and reward bias and loss avoidance
 ```{r Aim 1, include=FALSE}
 mr.rewp_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -270,9 +264,6 @@ aim1_table <- DISS_make_table(first_model=mr.rewp_pilt, second_model=mr.fn_pilt,
 #           escape=TRUE)
 ```
 
-
-
-## Association between RewP/FN and depression and social anxiety severity
 ```{r Aim 2, include=FALSE}
 mr.rewp_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -298,7 +289,6 @@ apa_table(
 )
 ```
 
-## Association between Reward bias/loss avoidance and depression and social anxiety severity
 ```{r Aim 3, include=FALSE}
 mr.piltp_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -314,7 +304,6 @@ apa_table(aim3_table,
           align = c("l", rep("c", 6)))
 ```
 
-## Structural equation modeling of hypotheses
 ```{r SEM, include=FALSE}
 library(lavaan)     #SEM
 library(lavaanPlot) #plot SEMs
@@ -413,13 +402,10 @@ apa_table(fitm,
           align = c("l", rep("c", 2)))
 ```
 
-# Figures
-## Figure 1
-```{r Figure 1, fig.cap = "Depitction of island getaway trial and schematic of PILT", out.width='100%'}
+```{r Figure 1, fig.cap = "Depiction of Island Getaway ERP task trial and schematic of Probabilistic Incentive Learning Task (PILT)", out.width='100%'}
 knitr::include_graphics('../work/figures/IG_PILT.png')
 ```
 
-## Figure 2
 ```{r Make and plot grand averages}
 # Drop unneeded columns and add Time variable
 DISS_do02_grandaverage_time <- DISS_do02_grandaverage %>%
@@ -554,9 +540,7 @@ ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
 \newpage
 
 # Supplement
-
-## Aim 1: with discriminability
-```{r}
+```{r With discriminability}
 mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
 mr.fn_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
@@ -572,8 +556,7 @@ apa_table(aim1_table_disc,
           escape=TRUE)
 ```
 
-## Psychotropic meds supplementary analysis
-```{r}
+```{r Psychotropic meds supplementary analysis}
 # Aim 1
 mr.rewp_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 mr.fn_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
@@ -609,8 +592,7 @@ apa_table(aim3_table_med,
           align = c("l", rep("c", 6)))
 ```
 
-## Other ERP components
-```{r P2 and N1, eval=FALSE}
+```{r Other ERP components, eval=FALSE}
 mr.p2_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(p2_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 mr.n1_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(n1_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 

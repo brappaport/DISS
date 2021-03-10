@@ -1,0 +1,626 @@
+---
+title             : "Behavioral, neural, and psychiatric correlates of social feedback"
+shorttitle        : "Correlates of social feedback"
+
+author: 
+  - name          : "Brent I. Rappaport"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    address       : "One Brookings Drive St. Louis, MO 63130"
+    email         : "brappaport@wustl.edu"
+    role:         # Contributorship roles (e.g., CRediT, https://casrai.org/credit/)
+      - Conceptualization
+      - Formal Analysis
+      - Writing - Original Draft Preparation
+      - Writing - Review & Editing
+  - name          : "Autumn Kujawa"
+    affiliation   : "2"
+    role:
+      - Methodology
+      - Conceptualization
+      - Writing - Review & Editing
+  - name          : "Kodi B. Arfer"
+    affiliation   : "3"
+    role:
+      - Software
+      - Writing - Review & Editing
+  - name          : "Samantha Pegg"
+    affiliation   : "2"
+    role:
+      - Formal Analysis
+      - Writing - Review & Editing
+  - name          : "Danielle Kelly"
+    affiliation   : "4"
+    role:
+      - Writing - Review & Editing
+      - Supervision
+      - Resources
+      - Funding acquisition
+  - name          : "Joan L. Luby"
+    affiliation   : "4"
+    role:
+      - Resources
+      - Funding acquisition
+      - Writing - Review & Editing
+  - name          : "Deanna M. Barch"
+    affiliation   : "1,4,5"
+    role:
+      - Conceptualization
+      - Supervision
+      - Resources
+      - Funding acquisition
+      - Writing - Review & Editing
+
+affiliation:
+  - id            : "1"
+    institution   : "Psychological & Brain Science, Washington University in St. Louis"
+  - id            : "2"
+    institution   : "Department of Psychology & Human Development, Vanderbilt University"
+  - id            : "3"
+    institution   : "Center for HIV Identification, Prevention, and Treatment Services, University of California"
+  - id            : "4"
+    institution   : "Department of Psychiatry, School of Medicine, Washington University in St. Louis"
+  - id            : "5"
+    institution   : "Department of Radiology, School of Medicine, Washington University in St. Louis"
+    
+
+authornote: |
+  1 Psychological & Brain Science, Washington University in St. Louis, St. Louis, MO  
+  2 Department of Psychology & Human Development, Vanderbilt University, Nashville, TN  
+  3 Center for HIV Identification, Prevention, and Treatment Services, University of California, Los Angeles, Los Angeles, CA  
+  4 Department of Psychiatry, School of Medicine, Washington University in St. Louis, St. Louis, MO  
+  5 Department of Radiology, School of Medicine, Washington University in St. Louis, St. Louis, MO  
+
+abstract: |
+  Problems responding to peer feedback arise in numerous psychiatric disorders; yet heterogeneity and homogeneity across disorders suggests both common and unique mechanisms of impaired interpersonal relationships. Studies seeking to understand these mechanisms often have to rely on reverse inference assumptions to match psychological processes to brain activity. Thus, we aimed to examine the relationship between the brain’s response to peer acceptance and rejection and depression and social anxiety severity, and also to test such assumptions by examining the correspondence between the brain’s response and behavioral performance on a separate reward and loss task. The sample consisted of 114 16–19-year-olds who received virtual peer acceptance or rejection feedback in an event-related potential task. We used principal component analysis to identify the reward positivity (RewP) and feedback negativity (FN) and measured the mean amplitude. Hypotheses were tested using multiple regression models, including covariates. Structural equation modeling was used to test the overall fit of all proposed hypotheses to the data. We found that the FN was positively related to behavioral loss avoidance. We found a relationship between the RewP and depression severity that, while non-significant, is of a similar magnitude to prior studies. Exploratory analyses showed a positive relationship between the RewP and socioeconomic status (SES). These findings inform theories of diagnostic homogeneity and heterogeneity, while both supporting and calling into question reverse inference based assumptions about the function of the RewP and FN to social feedback. The novel exploratory finding, if replicated, provides a potential mechanism linking SES and risk for psychopathology.
+  
+  <!-- https://tinyurl.com/ybremelq -->
+  
+keywords          : "social feedback, ERP, depression, social anxiety, reward, reward positivity, feedback negativity"
+wordcount         : "X"
+
+bibliography      : ["DISS-library.bib"]
+
+floatsintext      : no
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : yes
+mask              : no
+draft             : no
+always_allow_html : true
+
+csl               : "apa.csl"
+documentclass     : "apa7"
+classoption       : "man"
+output            : papaja::apa6_docx
+
+---
+
+```{r setup, include=FALSE, warning=FALSE, error=FALSE, message=FALSE, results='hide'}
+  renv::restore()     #restore environment
+  # library(knitr)      #allows rmarkdown files
+  library(haven)      #helps import stata
+  library(questionr)  #allows lookfor function
+  library(broom)      #nice statistical output
+  library(here)       #nice file paths
+  library(expss)      #labeling variables/values
+  library(psych)      #used for statistical analyses
+  library(ggplot2)    #creates plots
+  library(MASS)       #create residualized variables
+  library(broman)     #better in-text rounding (myround)
+  library(MissMech)   #test of MCAR
+  library(naniar)     #handle missingness
+  library(mice)       #multiple imputation
+  library(miceadds)   #adding functions to mice
+  library(tidyverse)  #plotting/cleaning, etc.
+  library(pander)     #make nice tables
+  library(ggpubr)     #make nice graphs
+  library(kableExtra) #make tables
+  library(scipub)
+  library(papaja)     #using apa formatting
+  library(workflowr)  #helps with workflow
+r_refs("DISS-library.bib")
+```
+
+```{r knitr_options}
+# Seed for random number generation
+set.seed(314)
+
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed,
+                      echo=FALSE, echo = FALSE, include = FALSE,
+                      tidy=TRUE, highlight=TRUE, warning=FALSE, dpi = 300)
+```
+
+```{r Load data}
+      load(file = "../work/data/DISS_do01_full.RData")   
+
+      load(file = "../work/data/DISS_do01.RData")   
+      
+      load(file = "../work/data/DISS_do01.imp.RData")
+      
+      load(file = "../work/data/DISS_do01.imp_z.RData")
+```
+
+```{r Make variable lists}
+measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","Reward_bias_20_block1","Reward_bias_20_block2","Loss_bias_20_block1","Loss_bias_20_block2","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
+factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
+var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
+var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f")
+var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
+```
+
+
+```{r Subset data}
+measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","Reward_bias_20_block1","Reward_bias_20_block2","Loss_bias_20_block1","Loss_bias_20_block2","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
+factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
+
+for (f in factors_list){ 
+    eval(parse(text=paste0("DISS_do01_full$",f,"_f <- with(DISS_do01_full, as.factor(",f,"))")))
+}
+
+contrasts(DISS_do01_full$sex_f) <- contr.sum(2)
+contrasts(DISS_do01_full$PDSIII_Race_f) <- contr.sum(3)
+contrasts(DISS_do01_full$PDSIII_Hispanic_f) <- contr.sum(2)
+contrasts(DISS_do01_full$S5psychmed_dos_f) <- contr.sum(2)
+
+DISS_do01 <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
+    drop_na(rewp_r, T20age) %>%
+    dplyr::select(c(Subid, all_of(measures_list), all_of(factors_list), paste0(factors_list[1:3],"_f")))
+
+var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
+var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f")
+
+var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
+```
+
+```{r Outliers, include=FALSE}
+#Univariate
+apply(DISS_do01[,var_interest_f[1:6]], 2, function(x) which(x > (mean(x, na.rm=T)+3*sd(x, na.rm=T)) | x < (mean(x, na.rm=T)-3*sd(x, na.rm=T))))
+
+#Multivariate
+data_p <- psych::outlier(DISS_do01[,var_interest_nocovar],plot = T,bad=10,na.rm=T)
+rows_to_exclude <- which(pchisq(data_p,df=6,ncp=0,lower.tail = F,log.p = F)<.001)
+rows_to_exclude
+
+DISS_do01_full_nooutliers <- DISS_do01_full %>% #subset data to only include those that completed Island Getaway task and have T20age
+    drop_na(rewp_r, T20age) %>%
+    dplyr::slice(-rows_to_exclude)
+DISS_do01_nooutliers <- DISS_do01 %>%
+    dplyr::slice(-rows_to_exclude)
+
+length(DISS_do01_nooutliers$Subid)
+```
+
+# Introduction
+Problems forming and maintaining interpersonal relationships are associated with physical health problems and increased mortality risk [@houseSocialRelationshipsHealth1988]. Such problems arise in numerous psychiatric disorders [@americanpsychiatricassociationDiagnosticStatisticalManual2013; @kennedySocialBrainPsychiatric2012]; yet heterogeneity and homogeneity across disorders suggests both common and unique mechanisms of impaired interpersonal relationships. Homogeneity is exemplified by multiple disorders sharing deficits. For example, both depression and social anxiety are associated with heightened sensitivity to social rejection [@burklundNeuralResponsesSocial2017; @cohenRejectionSensitivityTransdiagnostic2016; @gaoAssociationsRejectionSensitivity2017; @groschwitzDifferentialNeuralProcessing2016; @harrewijnBehavioralEEGResponses2017; @heerenCorrelatesSocialExclusion2017; @hsuItStillHurts2015; @kujawaElectrocorticalReactivitySocial2014; @malejkoNeuralCorrelatesSocial2018; @silkIncreasedNeuralResponse2014]. There is also heterogeneity, with depression associated with blunted neural responses to social acceptance and inclusion [@daveyIncreasedAmygdalaResponse2011; @kujawaSocialProcessingEarly2017; @zhangDullSocialAcceptance2017], whereas social anxiety is not [@kujawaSocialProcessingEarly2017; @peggBluntedSocialReward2019]. Thus, although these two dimensions of psychopathology are related to deficits in responding to social feedback, they may do so via both shared and distinct mechanisms, necessitating more individualized treatments. To test such hypotheses, transdiagnostic studies are needed to distinguish common from unique neural and behavioral deficits in social feedback response across psychiatric disorders.\
+
+Recent studies of social feedback (i.e. acceptance and rejection) have suggested that the brain responds to acceptance much like monetary rewards [@distefanoComparisonElectrocorticalResponse2018; @wakeCommonNeuralCode2017], though with notable differences [@ethridgeNeuralResponsesSocial2017; @rademacherDifferentialPatternsNucleus2014; @rappaportPeerVictimizationDysfunctional2019]. Although some researchers have suggested that the brain responds to rejection much like physical pain [@eisenbergerDoesRejectionHurt2003; @eisenbergerPainSocialDisconnection2012; @eisenbergerWhyRejectionHurts2004; @liebermanDorsalAnteriorCingulate2015], this proposition has recently been called into question by two independent meta-analyses [@cacioppoQuantitativeMetaAnalysisFunctional2013; @vijayakumarNeuralCorrelatesSocial2017], among others [@somervilleAnteriorCingulateCortex2006; @wooSeparateNeuralRepresentations2014]. Instead, an alternative hypothesis is that rejection is akin to loss. As defined in the Research Domain Criteria matrix, loss refers to: *“a state of deprivation of a motivationally significant con-specific, object, or situation. Loss may be social or non-social and may include permanent or sustained loss of…loved ones, or relationships”* [@NIMHDefinitionsRDoC]. In fact, @cacioppoQuantitativeMetaAnalysisFunctional2013 found greater BOLD signal in the insula to social exclusion, and @vijayakumarNeuralCorrelatesSocial2017 found greater BOLD signal in the ventral striatum--regions implicated in processing negative affect [@hamiltonDefaultModeTaskPositiveNetwork2011; @palaniyappanDoesSalienceNetwork2012] and loss [@canessaFunctionalStructuralNeural2013a; @dugreLossAnticipationOutcome2018; @liuCommonDistinctNetworks2011; @oldhamAnticipationOutcomePhases2018; @tomNeuralBasisLoss2007a]. Thus, a hypothesis that may be compatible with both the pain theories of rejection and recent meta-analyses is that social rejection is processed similarly to other forms of loss.
+
+## The reverse inference problem
+To test such hypotheses about the psychological processes implicated in the response of social feedback, studies thus far have typically relied on reverse inference: *“the inference of a psychological process from an observed pattern of brain activity”* [@amodioCanNeuroscienceAdvance2010]. For example, despite suggestions that similar brain regions are activated to social acceptance and monetary reward, drawing the conclusion that the reward system is implicated in responding to social acceptance from such findings is problematic since similar patterns of brain activation could reflect different psychological processes. As such, studies are needed that test whether the brain’s response to such feedback is associated with behavioral measures [@poldrackCanCognitiveProcesses2006], in this case indexing response to reward or loss, providing converging evidence of dysfunction in the hypothesized psychological process. If so, it suggests a function of that brain activity in reward/loss responsivity; if not it calls into question prior conclusions made using reverse inference. Thus, the current proposal aims to test whether the brain’s reward/loss system responds to social acceptance and rejection feedback, and whether deficits in responding to feedback are related to depression and social anxiety severity.
+
+## Advantages of event-related potentials (ERP)
+Processing and responding to social feedback requires a host of brain regions that work in a coordinated fashion [@amodioCanNeuroscienceAdvance2010]. FMRI studies have begun to identify regions active in response to social exclusion [@cacioppoQuantitativeMetaAnalysisFunctional2013; @vijayakumarNeuralCorrelatesSocial2017]. In complementary research, event-related potentials (ERPs)—-EEG signals time-locked to a stimulus onset—-provide a robust way to understand the timing of neural responses associated with social feedback by examining specific ERP components thought to reflect brain activity to acceptance (reward positivity [RewP]) and rejection (feedback negativity [FN]) [@luckOxfordHandbookEventRelated2012; @proudfitRewardPositivityBasic2015; @reganHumanBrianElectrophysiology1989]. Given the complexity of brain responses to social feedback, the temporal resolution of ERP may be better suited to identifying individual differences in brain responses than methods with worse temporal but better spatial resolution [@amodioTrackingDynamicsSocial2014]. Moreover, ERPs directly measure brain activity [@grattonSheddingLightBrain2001], rather than its indirect consequence with a hemodynamic response in fMRI. Furthermore, ERP allows participants to sit upright rather than still and supine in a scanner, lending it it greater ecological validity [@amodioTrackingDynamicsSocial2014]. These factors together suggest that ERP is an ideal method for measuring individual differences in brain responsivity to social feedback.
+
+## Current study
+The current study aims to address these questions. Specifically, first we test reverse inference assumptions by analyzing the relationship between individual differences in  RewP and FN magnitude to social acceptance and rejection feedback and separate behavioral individual differences of bias towards rewards and avoidance of losses. Testing whether individual or group differences in brain activity are also related to a converging behavioral measure constrains the interpretation of the brain activation [@poldrackCanCognitiveProcesses2006]. Second, we test diagnostic homogeneity and heterogeneity by analyzing the relationship between individual differences in  RewP and FN magnitude to social acceptance and rejection feedback and severity of depression and social anxiety symptoms. Third, we test for the presence of a relationship between behavioral bias towards rewards and away from losses and severity of depression and social anxiety, aiding in the interpretation of the previous analyses.
+
+NOTES FROM DEANNA: Third leg of the triangle, if all of that is true, the behavioral metric that index the ERP function, should also relate to the psychopathology in the same way that the ERP does. Nomological network: the way of instantiating the relationships that should hold if the functional role of the ERP component and it's role in psychopathology fit.
+
+# Methods
+## Participants
+Participants completed all measures during the tenth assessment wave of the Preschool Depression Study (PDS; see Supplemental Materials for full chronology of study). In this study, Participants were initially screened at preschool age for the study using the Preschool Feelings Checklist (PFC) [@lubyPreschoolFeelingsChecklist2004] in order to recruit children with high and low symptoms of depression. Children were excluded if they presented with chronic illness, marked speech and/or language delays and/or neurologic or autism spectrum disorders. An additional 40 currently healthy children were added at school age. Of those, 118 participants completed the social feedback task. Of those, one participant was excluded due to technical errors during the social feedback task, and two participants were excluded due to intelligence quotients (IQ) below 70. Of those `r sum(complete.cases(DISS_do01$rewp_r))` remaining participants, `r sum(complete.cases(DISS_do01$Reward_bias_20))` had completed and has usable data for the behavioral reward/loss task, `r sum(complete.cases(DISS_do01$S5cdic_bdi_perc))` had completed a self-report measure of depression, and `r sum(complete.cases(DISS_do01$S5_SIASSPS))` had completed a self-report measure of social anxiety.
+
+```{r Multiple imputation, include=FALSE}
+# md.pattern(DISS_do01[,var_interest_f])
+# DISS_do01_nooutliers$Subid <- as.character(DISS_do01_nooutliers$Subid)
+DISS_do01.imp <- mice(DISS_do01_nooutliers[,c(var_interest_f)], m = 10, method = 'pmm', seed=314) #generate 10 imputed datasets
+summary(DISS_do01.imp)
+
+DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
+
+DISS_do01.comp$Reward_bias_20.NA <- cci(DISS_do01_nooutliers$Reward_bias_20)
+DISS_do01.comp$Loss_bias_20.NA <- cci(DISS_do01_nooutliers$Loss_bias_20)
+DISS_do01.comp$S5cdic_bdi_perc.NA <- cci(DISS_do01_nooutliers$S5cdic_bdi_perc)
+```
+
+```{r Standardize variables}
+#convert into datlist
+DISS_do01.dat <- miceadds::mids2datlist(DISS_do01.imp)
+#scale/standardize datlist
+DISS_do01.dat_z <- scale_datlist(datlist=DISS_do01.dat, orig_var=measures_list[c(1:4,9:12)], trafo_var=paste0(measures_list[c(1:4,9:12)],"_z"), weights=NULL, M=0, SD=1, digits=NULL)
+#convert back to mids
+DISS_do01.imp_z <- miceadds::datlist2mids(DISS_do01.dat_z)
+
+#standardize measures in non-imputed dataset (DISS_do01)
+for (m in measures_list){
+ eval(parse(text=paste0("DISS_do01_nooutliers$",m,"_z <- scale(DISS_do01_nooutliers$",m,", center=T, scale=T)")))
+}
+
+DISS_do01.comp_z <- complete(DISS_do01.imp_z, "long", include = TRUE)
+
+#save non-imputed dataset
+save(DISS_do01_nooutliers, file="../work/data/DISS_do01_nooutliers.RData")
+#save imputed dataset(s)
+save(DISS_do01.imp_z, file="../work/data/DISS_do01.imp_z.RData")
+```
+
+## Measures
+### Depression severity\
+Depression severity was measured using the Child Depression Inventory–2 (CDI-2) [@kovacsChildrenDepressionInventory1992] for participants less than 18 years-old and Beck Depression Inventory–II (BDI–II) [@dozoisPsychometricEvaluationBeck1998] for participants 18 years-old and older. The CDI-2 includes 28 items scored on a three point Likert scale. The BDI-II includes 21 items scored on a four point Likert scale. Both measures assess self-reported depression symptoms in the past 2 weeks and have excellent internal consistency (CDI-2: $\alpha$=0.91; BDI-II: $\alpha$=0.91) and test-retest reliability (CDI-2: $r$=0.89; BDI-II: $r$=0.93) [@beckBeckDepressionInventoryII1996; @dozoisPsychometricEvaluationBeck1998; @kovacsChildrenDepressionInventory1992].
+
+### Social anxiety severity\
+Social anxiety severity was measured using the Social Interaction Anxiety Scale (SIAS-6) and Social Phobia Scale (SPS-6) [@petersDevelopmentShortForm2012]—a scale that combines the two scales and was developed as an abbreviated version of the full SIAS/SPS [@mattickDevelopmentValidationMeasures1998] using Item Response Theory modeling. This scale includes 6 items rated on a five point Likert scale from each of the SIAS-6 and SPS-6, comprising one total scale. The SIAS/SPS-6 assesses self-reported current symptoms of social anxiety/phobia (with no specific time frame given) and has excellent internal consistency ($\alpha$ > 0.90) and test-retest reliability ($r$ > 0.91) [@mattickDevelopmentValidationMeasures1998; @osmanSocialPhobiaSocial1998].
+  
+### Covariates\
+Covariates in multiple regression models included age at time of task, sex, race (Caucasian, African American, or Other), Hispanic ethnicity, and socioeconomic status (i.e., income-to-needs ratio).
+
+## Procedure  
+### Social feedback ERP task\
+The Island Getaway task was used to measure brain responses to social feedback. For the task, participants are told they will be playing a game with 11 co-players in which they would be travelling in the Hawaiian Islands, and at each island, have to vote whether they want each co-player to continue on with them to the next island and then receive feedback on how co-players voted for them. Participants review information about each co-player (e.g., gender, location, personal preferences) and enter information that they are told is similarly reviewed by each co-player. Participants complete 6 rounds of “voting,” during which they vote whether to “keep” or “kick out” each co-player, and following each vote receive feedback as to whether that co-player voted to accept (“keep”) or reject (“kick out”) them (Figure 1). After each round, participants are told that one of the co-players had been sent out, and after completing the sixth round, participants are informed that they made it to the “Big Island.” Participants receive 51 trials of feedback: 25 acceptance and 25 rejection, and one randomly selected trial—a unique strength of this particular task (over tasks of only social rejection or exclusion) that yields reliable measurements of brain activity to social acceptance and rejection feedback. Co-players are randomly assigned a voting pattern for each participant such that 2 co-players reject the participant on most rounds, 2 co-players accept the participant on most rounds, and the remaining 7 co-players are equally likely to accept or reject the participant. Following the task, participants complete a brief post-task questionnaire assessing engagement in the task. This task has been validated in early adolescent, late adolescent, and young adult samples [@ethridgeNeuralResponsesSocial2017; @ethridgePsychometricPropertiesNeural2018; @kujawaSocialProcessingEarly2017].
+
+### Behavioral reward bias and loss avoidance task\
+To measure reward bias and loss avoidance we used the Probabilistic Incentive Learning Task (PILT), specifically two modified versions [@heereyDecisionMakingImpairmentsContext2008; @pizzagalliObjectiveCharacterizationAnhedonic2005], here termed PILT-Positive and PILT-Negative, to assess reward bias and loss avoidance respectively. These tasks have been used in adult and pediatric samples [@heereyDecisionMakingImpairmentsContext2008; @lukingChildGainApproach2015; @lukingLossesLoomLarger2016; @lukingReducedHedonicCapacity2015; @pizzagalliObjectiveCharacterizationAnhedonic2005; @pizzagalliReducedHedonicCapacity2008]. In each trial, participants perform a perceptual discrimination and indicate whether a long or short stimulus was briefly presented (Figure 1). For the PILT-P, a portion of correct responses receive gain feedback while, for the PILT-N, a portion of incorrect responses receive loss feedback. For both tasks, one of the two responses (i.e. short or long, termed the RICH response) is scheduled to receive three times the amount of feedback as the alternative (LEAN) response. This leads to preferentially selecting the RICH response in the PILT-P (reward bias) and avoiding the RICH response in the PILT-N (loss avoidance) [@lukingChildGainApproach2015; @lukingReducedHedonicCapacity2015; @pizzagalliObjectiveCharacterizationAnhedonic2005; @pizzagalliReducedHedonicCapacity2008].\
+           Participants complete 20 practice trials, followed by two blocks of ## trials each. Feedback was presented in a pseudo-random order, so that no more than three trials in a row could receive feedback. As in prior studies, individual trials with reactions times (RT) faster than 150ms or slower than 2500ms were or great than or less than 3 standard deviations from the participant’s mean RT were excluded.
+Response bias (log b) assesses behavioral responsiveness to feedback. More positive values on the PILT-P task indicate a greater propensity to select the RICH (i.e. rewarded) stimulus and more positive values on the PILT-N task indicate a greater propensity to select the LEAN (i.e. non-punished) stimulus.  
+
+$$Reward~bias~(logb) = \frac{1}{2}log\frac{RICH_{correct}*LEAN_{incorrect}}{RICH_{incorrect}*LEAN_{correct}}$$
+
+### EEG Acquisition and Processing\
+Continuous EEG was recorded using the BrainVision ActiChamp, 32 channel active channel amplifier system (BrainVision LLC, Morrisville, NC, USA). Electrodes were mounted in an elastic cap using a subset of the International 10/20 System sites (FP1, F3, F7, FC1, FC5, FT9, C3, T7, CP1, CP5, TP9, P3, P7, O1, Fz, Cz, Pz, Oz, FP2, F4, F8, FC2, FC6, FT10, C4, T8, CP2, CP6, P4, P8, TP10, O2), with a ground electrode located at FPz. The electrooculogram (EOG) generated from blinks and eye movements is recorded from five facial electrodes. The EEG is sampled at 500 Hz and all signals digitized on a computer. All data was re-referenced to the average of Tp9 and Tp10 and band-pass filtered from 0.1 to 30 Hz. The EEG was corrected for EOG artifacts [@grattonNewMethodOffline1983] and physiological artifacts removed using an automatic procedure with a maximum allowed voltage step of 50 µV within a 400 ms interval length, maximum absolute difference between any two points of 175 µV, and a minimum allowed activity of 0.50 µV within a 100 ms interval length. The EEG is segmented into 1000 ms epochs, beginning 200 ms before and ending 800 ms after feedback onset. ERPs are averaged for acceptance and rejection feedback, and baseline corrected to activity 200 ms prior to feedback.
+
+## Data Analysis
+Data analysis plans were pre-registered following data collection but prior to data analysis (osf.io/x8rdh). Those analyses that were not pre-registered are included in the exploratory analyses section of the results.
+
+### PCA\
+```{r}
+rewp_ttest <- t.test(DISS_do01_full_nooutliers$rewp_ACC, DISS_do01_full_nooutliers$rewp_REJ, paired=TRUE)
+p2_ttest <- t.test(DISS_do01_full_nooutliers$p2_ACC, DISS_do01_full_nooutliers$p2_REJ, paired=TRUE)
+n1_ttest <- t.test(DISS_do01_full_nooutliers$n1_ACC, DISS_do01_full_nooutliers$n1_REJ, paired=TRUE)
+```
+Temporospatial principal component analysis (PCA) was conducted using the EP Toolkit [@dienERPPCAToolkit2010]. A temporal PCA was conducted first, using a Promax rotation to rotate a simple structure in the temporal domain [@dienApplyingPrincipalComponents2012; @dienEvaluatingTwostepPCA2010; @dienEvaluationPCAICA2007] and including time points from each participant’s averaged data as variables and participants, recording sites, and trial types as observations. To identify factors accounting for substantial variance, a Scree plot [@cattellScreeTestNumber1966] was generated and a parallel test [@hornRationaleTestNumber1965] conducted comparing a Scree of the dataset to that of a fully random dataset. We identified 15 temporal factor (TF) that accounted for a larger proportion of variance than the random dataset, and thus were retained. Next, a spatial PCA was conducted using Infomax rotation to rotate the spatial factors to independence [@dienEvaluatingTwostepPCA2010] and including all recordings sites as variables and participants, trial types, and temporal factor scores as observations. We identified 3 spatial factors (SF), resulting in 45 factor combinations accounting for a total 34.8% of the variance. Factor scores were converted to voltages and robust analysis of variance was conducted on factors that accounted for greater than 1% of variance to identify factors that meaningfully distinguish acceptance and rejection feedback, yielding 11 factors. Peak latency and electrode location were used to identify the RewP/FN component at temporal factor 2-spatial factor 1 (TF2/SF1). Data was imported from Brain Vision Analyzer to R [@rcoreteamLanguageEnvironmentStatistical2020a] for all further computations.\
+           ERP activity in the RewP significantly differed between the acceptance and rejection conditions `r apa_print(rewp_ttest, in_paren=TRUE)$full_result`. The RewP was calculated as the mean activity 50ms before and 50ms after the peak latency (344ms, time window of 294-394ms) at the peak electrode (FP2; see Figure 2). In line with previous work and recommendations [@meyer-lindenbergNeuralMechanismsSocial2012], residual scores for the RewP response to acceptance accounting for the response to rejection were calculated, producing scores uncorrelated with the response to rejection. Likewise, residual scores for the FN response to rejection accounting for the response to acceptance were calculated, producing scores uncorrelated with the response to acceptance. This produces RewP and FN scores that are correlated but not inverses of one another and isolates mean amplitude in the ERP unique to acceptance or rejection. A non-difference score measure (e.g., mean amplitude to acceptance without accounting for activity to rejection) is confounded by activity throughout the brain unrelated to the acceptance stimulus.\
+           Results of the PCA also suggested the presence the the P2 (peak latency: 212ms, time window of 162-262ms) and N1 (peak latency: 174, time window of 124-224ms) components, both of which also significantly differed between the acceptance and rejection conditions (`r apa_print(p2_ttest)$full_result`; `r apa_print(n1_ttest)$full_result`, respectively).
+
+Mahalanobis distance was calculated among all measures used in confirmatory analyses (i.e. reward positivity, feedback negativity, reward bias, loss avoidance, depression severity, social anxiety severity) and use to identify and exclude multivariate outliers with a threshold of $p$<0.001 ($N$=`r length(rows_to_exclude)`). This resulted in a final sample of $N$=`r length(DISS_do01_nooutliers$Subid)`.
+Multiple imputation was conducted using the ‘MICE’ package [@vanbuurenMiceMultivariateImputation2011] in R, following a lack of significant evidence that the data were not missing completely at random (MCAR; $p$=`r mean(MCAR_test$pnormality)`).  Ten imputations were generated using predictive mean matching and the variables of interest (i.e. depression severity, social anxiety severity, reward positivity, feedback negativity, reward bias, and loss avoidance).
+
+### Multiple regression models\
+Following multiple imputation, measures were standardized in each of the 10 imputations. Multiple regression models were conducted and estimates were pooled across the imputations using the ‘miceadds’ package [@miceadds_3.10-28].\
+           Simultaneous multiple regression models were used to test all three primary hypotheses. That is, two models tested the first hypothesis. In one model, reward bias and loss avoidance were included as predictors, along with covariates, and the RewP as the outcome. The other model included the same predictors but included the FN as the outcome. These models allow for estimation of the amount of unique variance in the ERP component activity accounted for by reward bias and loss avoidance, controlling for covariates.  
+           An identical structure was used to test the second and third hypotheses. That is, in models testing the second hypothesis, depression and social anxiety severity were included as predictors and the RewP as the outcome in the first model, and the FN as the outcome in the second model.  In models testing the third hypothesis, depression and social anxiety severity were included as predictors and reward bias as the outcome in the first model, and loss avoidance as the outcome in the second model.
+
+### Structural equation model of hypotheses\
+A structural equation model (SEM) of all three hypotheses was modeled using the ‘lavaan’ package [@rosseelLavaanPackageStructural2012a] to determine whether the hypotheses demonstrated an overall improvement in model fit over null model (i.e. one that assumed that all of the hypothesized relationships were null). By simultaneously testing the predicted associations between all variables, this model will account for within-subject shared variance across, for example, ERP components (i.e. RewP & FN), while testing its predicted associations with reward bias and loss avoidance and with the psychopathology measures. Model fit was assessed two ways. First, measures of absolute model fit—root mean square error of approximation (RMSEA) and standardized root mean square residual (SRMR)—were compared to established guidelines (RMSEA & SRMR < 0.08) to determine goodness of fit [@hooperStructuralEquationModelling2008]. Second, measures of relative model fit—comparative fit index (CFI), Akaike Information Criteria (AIC), Bayesian Information Criteria (BIC)—were compared to a reduced model (with higher CFI and lower AIC and BIC indicating better model fit) [@hooperStructuralEquationModelling2008].
+
+# Results
+## Confirmatory analyses
+```{r Zero-order correlations}
+zero_order_cor <- micombine.cor(DISS_do01.imp_z, variables=c("rewp_r_z","fn_r_z",
+                                          "Reward_bias_20_z","Loss_bias_20_z",
+                                          "S5cdic_bdi_perc_z","S5_SIASSPS_z"), 
+              conf.level=0.95, method="pearson", nested=FALSE, partial=NULL) %>%
+  mutate_if(is.numeric, round, 3)
+
+zero_order_cor_star <- zero_order_cor %>%
+  mutate(r_new=case_when(p<.01~paste0(r,"**"), p<.05~paste0(r,"*"), p<.1~paste0(r,"~"), TRUE~paste0(r))) %>%
+  select(variable1,variable2,r_new,p,r)
+
+zero_order_r <- round(attr(zero_order_cor, "r_matrix"),3)
+zero_order_rse <- round(attr(zero_order_cor, "rse_matrix"),3)
+
+# Calculate means and sds across imputations
+DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
+
+DISS_do01.comp_no0 <- DISS_do01.comp %>%
+  filter(.imp>0)
+meansd_list <- as.data.frame(matrix(nrow=6, ncol=3)); i=1
+while (i<7) {
+  for (m in var_interest_nocovar) {
+    means <- eval(parse(text=paste0("with(DISS_do01.comp_no0, tapply(",m,", .imp, mean))")))
+    sds <- eval(parse(text=paste0("with(DISS_do01.comp_no0, tapply(",m,", .imp, sd))")))
+    meansd_list[i,1] <- var_interest_nocovar[i]
+    meansd_list[i,2] <- mean(means)
+    meansd_list[i,3] <- mean(sds)
+    i=i+1
+  }
+  meansd_list[,2:3] <- round(meansd_list[,2:3],3)
+}
+meansd_list$Mean_SD <- paste0(meansd_list$V2," (",meansd_list$V3,")") 
+
+# Makee correlation table
+zero_order_matrix <- matrix(NA, nrow=6, ncol=7)
+zero_order_matrix[upper.tri(zero_order_matrix)] <- zero_order_r[upper.tri(zero_order_r)]
+zero_order_matrix[lower.tri(zero_order_matrix)] <- zero_order_rse[lower.tri(zero_order_rse)]
+row.names(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
+zero_order_matrix[,7] <- meansd_list$Mean_SD
+colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety", "Mean_SD")
+zero_order_matrix_test <-  as.data.frame(zero_order_matrix) %>%
+  dplyr::select(Mean_SD, everything())
+
+###### REGRESSIONS TO BE REPORTED ON IN TEXT ######
+fn_piltn_lm <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Loss_bias_20_z))), conf.int = TRUE,conf.level = 0.95)
+fn_piltn_ci <- paste0(myround(fn_piltn_lm[2,]$`2.5 %`,3),",", myround(fn_piltn_lm[2,]$`97.5 %`,3))
+
+rewp_dep_lm <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z))), conf.int = TRUE,conf.level = 0.95)
+rewp_dep_ci <- paste0(myround(rewp_dep_lm[2,]$`2.5 %`,3),",", myround(rewp_dep_lm[2,]$`97.5 %`,3))
+```
+
+### Association between RewP/FN and reward bias and loss avoidance
+```{r Aim 1}
+mr.rewp_pilt <- pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn_pilt <- pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+```
+\
+Multiple regression models showed that while the RewP to social acceptance feedback was not significantly associated with behavioral reward bias, the FN to social rejection feedback was significantly related to behavioral loss avoidance (see Table 3). Zero order correlations further confirmed this pattern of results, however, in the absence of covariates, the FN showed a trending association with loss avoidance, such that a greater negative deflection to rejection feedback was associated with a great behavioral avoidance of the punished response in the PILT-N task ($r$=`r myround(fn_piltn_lm[2,]$estimate,3)`, 95% CI=`r fn_piltn_ci`, *p*=`r myround(fn_piltn_lm[2,]$p.value,3)`).
+
+### Association between RewP/FN and depression and social anxiety severity\
+```{r Aim 2}
+mr.rewp_sym <- pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn_sym <- pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+```
+
+Multiple regression models showed that the RewP to social acceptance feedback was not significantly associated with depression severity, nor was the FN to social rejection feedback significantly associated with depression or social anxiety severity (see Table 4). Zero order correlations further confirmed this pattern of results, however, the effect size of the correlation between the RewP and depression severity ($r$=`r myround(rewp_dep_lm[2,]$estimate,3)`, 95% CI=`r rewp_dep_ci`, *p*=`r myround(rewp_dep_lm[2,]$p.value,3)`) was comparable to two large prior studies using indepedent samples ($r$=-0.10, total $N$=`r 412+231`; @kujawaSocialProcessingEarly2017; @peggBluntedSocialReward2019).
+
+### Association between Reward bias/loss avoidance and depression and social anxiety severity\
+```{r Aim 3}
+mr.piltp_sym <- pool(with(data=DISS_do01.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.piltn_sym <- pool(with(data=DISS_do01.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+```
+
+Multiple regression models showed that reward bias was not significantly associated with depression severity, nor was loss avoidance significantly associated with depression or social anxiety severity (see Table 5). Zero order correlations further confirmed this pattern of results.
+
+### Structural equation modeling of hypotheses\
+```{r SEM}
+library(lavaan)     #SEM
+library(lavaanPlot) #plot SEMs
+library(semTools)   #extra functions for SEM
+library(semPlot)    #plot SEMS
+
+simple_model <- '
+#Define residual error
+# Reward_bias_20_z ~~ Reward_bias_20_z
+# Loss_bias_20_z ~~ Loss_bias_20_z
+# rewp_r_z ~~ rewp_r_z
+# fn_r_z ~~ fn_r_z
+# S5cdic_bdi_perc_z ~~ S5cdic_bdi_perc_z
+# S5_SIASSPS_z ~~ S5_SIASSPS_z
+
+#Define correlations
+Reward_bias_20_z ~~ Loss_bias_20_z
+rewp_r_z ~~ fn_r_z
+S5cdic_bdi_perc_z ~~ S5_SIASSPS_z
+'
+
+full_model <- '
+#Define correlations
+Reward_bias_20_z ~~ Loss_bias_20_z
+rewp_r_z ~~ fn_r_z
+S5cdic_bdi_perc_z ~~ S5_SIASSPS_z
+
+#Define hypothesized regressions
+
+#Aim 1
+Reward_bias_20_z ~ rewp_r_z
+Loss_bias_20_z ~ fn_r_z
+
+#Aim 2
+rewp_r_z ~ S5cdic_bdi_perc_z
+fn_r_z ~ S5cdic_bdi_perc_z
+fn_r_z ~ S5_SIASSPS_z
+
+#Aim 3
+Reward_bias_20_z ~ S5cdic_bdi_perc_z
+Loss_bias_20_z ~ S5cdic_bdi_perc_z
+Loss_bias_20_z ~ S5_SIASSPS_z
+'
+
+fit_simple_model <- sem(simple_model, data=DISS_do01_nooutliers, missing="FIML", estimator="MLR")
+fit_full_model <- sem(full_model, data=DISS_do01_nooutliers, missing="FIML", estimator="MLR")
+lavTestLRT(fit_simple_model, fit_full_model)
+
+fitm_simple <- fitmeasures(fit_simple_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
+fitm_full <- fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
+
+# semPaths(fit_simple_model)
+# semPaths(fit_full_model)
+
+summary(fit_simple_model, standardized=TRUE, fit.measures=TRUE)
+summary(fit_full_model, standardized=TRUE, fit.measures=TRUE)
+
+# With imputation datasets
+fit_simple_model_mi <- sem.mi(simple_model, data=DISS_do01.imp_z, estimator="MLR")
+fit_full_model_mi <- sem.mi(full_model, data=DISS_do01.imp_z, estimator="MLR")
+# lavTestLRT.mi(fit_simple_model_mi, fit_full_model_mi, test="D2", pool.robust=TRUE)
+
+summary(fit_simple_model_mi)
+summary(fit_full_model_mi)
+```
+```{r}
+fitm <- cbind(fitm_simple, fitm_full)
+lavtest_full <- lavTestLRT(fit_simple_model, fit_full_model)
+```
+Structural equation models, modeling all hypotheses simlutaneously, supported the pattern of results reported above. The hypothesized model did not show significant improvement in model fit over the simplified model (see Table 6).
+
+### Psychotropic meds supplementary analysis
+```{r}
+S5psychmed_dos
+```
+
+## Exploratory analyses
+### Socioeconomic status\
+```{r Income to Need}
+mr.rewp_pilt_ci <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))), conf.int = TRUE,conf.level = 0.95)
+rewp_pilt_ci <- paste0(myround(mr.rewp_pilt_ci[9,]$`2.5 %`,3),", ", myround(mr.rewp_pilt_ci[9,]$`97.5 %`,3))
+
+mr.rewp_sym_ci <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z))), conf.int = TRUE,conf.level = 0.95)
+rewp_sym_ci <- paste0(myround(mr.rewp_sym_ci[9,]$`2.5 %`,3),", ", myround(mr.rewp_sym_ci[9,]$`97.5 %`,3))
+
+rewp_I2N <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Income_to_Need_z))), conf.int = TRUE,conf.level = 0.95)
+rewp_I2N_ci <- paste0(myround(rewp_I2N[2,]$`2.5 %`,3),", ", myround(rewp_I2N[2,]$`97.5 %`,3))
+
+fn_I2N <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Income_to_Need_z))), conf.int = TRUE,conf.level = 0.95)
+fn_I2N_ci <- paste0(myround(fn_I2N[2,]$`2.5 %`,3),", ", myround(fn_I2N[2,]$`97.5 %`,3))
+
+# Income to needs by race in sample
+I2N_race <- tidy(aov(Income_to_Need_z~ PDSIII_Race_f, DISS_do01_nooutliers))
+
+I2N_byrace <- DISS_do01_nooutliers %>%
+  group_by(PDSIII_Race_f) %>%
+  summarise(I2N_mean=mean(Income_to_Need))
+
+# Without race as a covariate
+mr.rewp_ci_norace <- summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Hispanic_f + Income_to_Need_z))), conf.int = TRUE,conf.level = 0.95)
+rewp_ci_norace <- paste0(myround(mr.rewp_ci_norace[9,]$`2.5 %`,3),", ", myround(mr.rewp_ci_norace[9,]$`97.5 %`,3))
+```
+Multiple regression models showed that socioeconomic status, as measured by income to needs, was significantly positively associated with the RewP (not the FN) when reward bias and loss avoidance were included as predictors ($\beta$=`r myround(mr.rewp_sym_ci[9,]$estimate,3)`, 95% CI=`r rewp_sym_ci`, *p*=`r myround(mr.rewp_sym_ci[9,]$p.value,3)`), and that the association was trending when current depression and social anxiety severity were included as predictors ($\beta$=`r myround(mr.rewp_sym_ci[9,]$estimate,3)`, 95% CI=`r rewp_sym_ci`, *p*=`r myround(mr.rewp_sym_ci[9,]$p.value,3)`). Follow up analyses showed that income to needs was indeed positively associated with the RewP, and not the FN, in zero-order correlations (RewP: $r$=`r myround(rewp_I2N[2,]$estimate,3)`, 95% CI=`r rewp_I2N_ci`; *p*=`r myround(rewp_I2N[2,]$p.value,3)`; FN: $r$=`r myround(fn_I2N[2,]$estimate,3)`, 95% CI=`r fn_I2N_ci`; *p*=`r myround(fn_I2N[2,]$p.value,3)`). Because income to needs significantly differed between races in our sample (*F*(`r I2N_race$df[1]`,`r I2N_race$df[2]`)=`r myround(I2N_race$statistic[1],3)`, *p*<.001) and recent discussion in the field about the imperfectness of reports on participants' race in identifying risk factors and equity gaps [@ioannidisRecalibratingUseRace2021], we also examined models in which race was omitted as a covariate. In these models, income to needs is significantly positively associated with the RewP covarying for reward bias, loss avoidance, and current depression and social anxiety severity ($\beta$=`r myround(mr.rewp_ci_norace[9,]$estimate,3)`, 95% CI=`r rewp_ci_norace`, *p*=`r myround(mr.rewp_ci_norace[9,]$p.value,3)`).\
+
+### Other ERP components\
+```{r P2 and N1}
+library(sjmisc)
+
+DISS_do02_exp <- merge(DISS_do01.comp_z, DISS_do01_full, by="Subid", no.dups=FALSE)
+
+DISS_do02_exp <- merge(DISS_do01.comp_z, DISS_do01_full[, c("Subid", setdiff(colnames(DISS_do01_full),colnames(DISS_do01.comp_z)))], by="Subid")
+table(is.na(DISS_do02_exp$S5cdic_bdi_perc))
+
+Map(function(x) lm(p2_r ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z, DISS_do02_exp, subset = .imp == x), levels(DISS_do02_exp$.imp))
+
+# DISS_do02_exp %>%
+  # group_by(.imp) %>%
+  # summary(lm(p2_r ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z, DISS_do02_exp))
+
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+mr.fn_pilt <- pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+summary(pool(with(data=DISS_do01.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z))))
+
+# DISS_do02_imp_merged <- merge_imputations(DISS_do01_nooutliers, DISS_do01.imp_z, DISS_do01_nooutliers)
+```
+...
+
+# Discussion
+As the first to assess the relationship between ERP responses to social feedback and behavioral performance on reward/loss tasks, the current study sought to test hypotheses that a) the RewP and FN ERP components observed in response to social feedback reflect reward and loss system function, b) depression and social anxiety have shared and distinct mechanisms of interpersonal relationship problems, and c) that depression and social anxiety have shared and distinct mechanisms of dysfunction in responding to rewards and losses. The results of the study showed mixed support for these hypotheses.\
+           For the first hypotheses, the RewP was unrelated to behavioral reward bias, however the FN was related to behavioral loss avoidance, such that a greater response to social rejection was related to a greater loss avoidance. This lends support for our hypotheses that social rejection reflects loss. ***ADD DISCUSSION OF SOC REJ AND LOSS***
+This is contradictory to a findings of a weak correlation between brain responses to social and monetary feedback ($r$(46)=0.16, $p$=0.27; $r$(37)=0.28, $p$=0.09) [@ethridgeNeuralResponsesSocial2017], and a subset of the current sample showed weak correlations as well ($r$(54)=0.04, $p$=0.76) ***CITE*** (unpublished data). However, both findings measured response to social acceptance and monetary reward using the RewP. Thus, the current findings suggest that the brain may respond to social rejection more similarly to monetary loss.\
+           In fact, this is consistent with ***DISCUSSION OF KATHERINE LUKING PAPERS, CITE NON-PDS PAPERS TOO***\
+           Finally, the lack of a relationship between the RewP and response to reward bias suggests that the RewP to social acceptance may not reflect purely psychological reward system function. One potential and intruiging explanation is that there are a number of psychological processes that over when on experiences social acceptance, with the reward system as one of those processes. ***FURTHER DISCUSSION***
+           Finally, we did not find that depression and social anxeiety severity were related to behavioral reward bias or loss avoidance. This was surprising given previous evidence that these constructs are affect, particularly in depression ***CITE KATHERINE PAPERS***. However, others have found that depression may affect participants' ability to discriminate between the two stimuli in the task. ***WE ADDRESSED THIS BY***.
+
+           We did not find support for significant relationships between the RewP and FN and depression and social anxiety symptoms. 
+           The results also suggested some interesting avenues for further exploration. We had not predicted a priori that socioeconomic status (as operationalized as income-to-needs) would be associated with the RewP and FN. We chose to include this in the multiple regression model to control for the established relationship between income-to-needs and psychopathology ***CITE***. 
+
+## Limitations
+```{r Power calculation}
+library(WebPower)
+## 5 covariates: age, gender, race, ethnicity, ses
+## 2 predictors: RewP, FN
+round(wp.regression(n=114, p1=7, p2=5, f2=c(.15,.10), alpha=.025, power=NULL)$power,3)
+
+f2=wp.regression(n=114, p1=7, p2=5, f2=c(.15,.10), alpha=.025, power=NULL)$f2
+r=sqrt(f2/(f2+1)); r
+ #d=sqrt(4*r^2/(1-r^2))
+wp.correlation(n=114, rho0=0, r=c(0.1,0.3), alpha=0.05, power=NULL)
+wp.correlation(n=757, rho0=0, r=0.1, alpha=0.05, power=NULL)
+
+full_model <- '
+#Define latent variables
+PILT.P =~ 1*pilt_p
+PILT.N =~ 1*pilt_n
+REWP =~ 1*rewp
+FN =~ 1*fn
+MDD =~ 1*mdd
+SAD =~ 1*sad
+
+#Define correlations
+PILT.P ~~ PILT.N
+REWP ~~ FN
+MDD ~~ SAD
+
+#Define hypothesized correlations
+
+#Aim 1
+PILT.P ~~ start(0.1)*REWP
+PILT.N ~~ start(0.1)*FN
+
+#Aim 2
+REWP ~~ start(0.1)*MDD
+FN ~~ start(0.1)*MDD
+FN ~~ start(0.1)*SAD
+
+#Aim 3
+PILT.P ~~ start(0.1)*MDD
+PILT.N ~~ start(0.1)*MDD
+PILT.N ~~ start(0.1)*SAD
+'
+
+# sem_power <- wp.mc.sem.basic(full_model, nobs=118, nrep=1000, alpha=0.05, se="robust", ovnames=c("PILT.P","PILT.N","REWP","FN","MDD","SAD"), parallel="snow")
+# summary(sem_power)
+
+
+full_model_cog_aff <- '
+#Define latent variables
+PILT.P =~ 1*pilt_p
+PILT.N =~ 1*pilt_n
+Flank =~ 1*flanker
+ER =~ 1*cerg
+REWP =~ 1*rewp
+FN =~ 1*fn
+N1 =~ 1*n1
+LPP =~ 1*lpp
+
+#Define correlations
+PILT.P ~~ PILT.N
+PILT.P ~~ Flank
+PILT.P ~~ ER
+PILT.N ~~ Flank
+PILT.N ~~ ER
+Flank ~~ ER
+
+REWP ~~ FN
+REWP ~~ N1
+REWP ~~ LPP
+FN ~~ N1
+FN ~~ LPP
+N1 ~~ LPP
+
+#Define hypothesized correlations
+
+#Aim 1
+Flank ~~ start(0.1)*N1
+
+#Aim 2
+PILT.P ~~ start(0.1)*REWP
+PILT.N ~~ start(0.1)*FN
+
+#Aim 3
+ER ~~ start(0.1)*LPP
+'
+
+# sem_power <- wp.mc.sem.basic(full_model_cog_aff, nobs=118, nrep=1000, alpha=0.05, se="robust", ovnames=c("PILT.P","PILT.N","Flank","ER","REWP","FN","N1","LPP"), parallel="snow", mimic="mplus")
+# summary(sem_power)
+```
+
+Our study may have been underpowered to detect the hypothesized relationships. Post-hoc power analyses suggested that the sample ($N$=114) has 92% power to detect moderate effects ($f2$=0.15), and 76% power to detect smaller effects ($f2$=0.10), at an adjusted alpha of 0.025 with two predictors of interest and five covariates in the multiple regression. Furthermore, we were underpowered to detect a correlation between the RewP to social acceptance and depression severity at $r$=-0.10 as found in this and two prior studies [@kujawaSocialProcessingEarly2017; @peggBluntedSocialReward2019]. That being said, when the three studies of pooled, the achieved sample size of $N$=`r 412+231+114` yields adequate power (`r round(wp.correlation(n=(412+231+114), rho0=0, r=.1, alpha=0.05, power=NULL)$power,2)*100`%) to detect this effect. Further studies of this association are required to determine whether this estimates a true popluation effect.
+
+Other behavioral measures may be superior to testing reverse inference based assumptions of the psychological processes represented by the RewP and FN to social feedback. Future studies using other behavioral measures of reward and loss are needed to verify whether or not these ERP components truly represent engagement of reward and loss systems.
+
+
+\newpage
+
+# References
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+
+<div id="refs" custom-style="Bibliography"></div>
+\endgroup
+
+```{r}
+   renv::snapshot()   #Take a snapshot of environment
+```

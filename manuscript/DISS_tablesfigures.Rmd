@@ -59,17 +59,17 @@ affiliation:
   - id            : "3"
     institution   : "Center for HIV Identification, Prevention, and Treatment Services, University of California"
   - id            : "4"
-    institution   : "Department of Psychiatry, School of Medicine, Washington University in St. Louis"
+    institution   : "Department of Psychiatry, School of medication, Washington University in St. Louis"
   - id            : "5"
-    institution   : "Department of Radiology, School of Medicine, Washington University in St. Louis"
+    institution   : "Department of Radiology, School of medication, Washington University in St. Louis"
     
 
 authornote: |
   1 Psychological & Brain Science, Washington University in St. Louis, St. Louis, MO  
   2 Department of Psychology & Human Development, Vanderbilt University, Nashville, TN  
   3 Center for HIV Identification, Prevention, and Treatment Services, University of California, Los Angeles, Los Angeles, CA  
-  4 Department of Psychiatry, School of Medicine, Washington University in St. Louis, St. Louis, MO  
-  5 Department of Radiology, School of Medicine, Washington University in St. Louis, St. Louis, MO  
+  4 Department of Psychiatry, School of medication, Washington University in St. Louis, St. Louis, MO  
+  5 Department of Radiology, School of medication, Washington University in St. Louis, St. Louis, MO  
   
 keywords          : "social feedback, ERP, depression, social anxiety, reward, reward positivity, feedback negativity"
 wordcount         : "X"
@@ -249,8 +249,6 @@ DISS_make_table <- function(first_model, second_model, predictors) {
 ```{r Aim 1, include=FALSE}
 mr.rewp_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
-pool(with(data=DISS_do02.imp_z, expr=lmer(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-
 mr.fn_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
 aim1_table <- DISS_make_table(first_model=mr.rewp_pilt, second_model=mr.fn_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
@@ -403,7 +401,7 @@ apa_table(fitm,
 ```
 
 ```{r Figure 1, fig.cap = "Depiction of Island Getaway ERP task trial and schematic of Probabilistic Incentive Learning Task (PILT)", out.width='100%'}
-knitr::include_graphics('../work/figures/IG_PILT.png')
+knitr::include_graphics('../figures/IG_PILT.png')
 ```
 
 ```{r Make and plot grand averages}
@@ -521,7 +519,6 @@ tfsf.plots
 # png("../work/figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
 
-## Figure 3
 ```{r I2N plot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "RewP to social acceptance and income to needs ratio", out.width='100%'}
 ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
@@ -539,7 +536,7 @@ ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
 
 \newpage
 
-# Supplement
+# Supplemental Materials
 ```{r With discriminability}
 mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -561,19 +558,19 @@ apa_table(aim1_table_disc,
 mr.rewp_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 mr.fn_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 
-aim1_table_med <- DISS_make_table(first_model=mr.rewp_pilt_med, second_model=mr.fn_pilt_med, predictors=c("Intercept", "Reward bias", "Loss avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medicine use"))
+aim1_table_med <- DISS_make_table(first_model=mr.rewp_pilt_med, second_model=mr.fn_pilt_med, predictors=c("Intercept", "Reward bias", "Loss avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 
 # Aim 2
 mr.rewp_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 mr.fn_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 
-aim2_table_med <- DISS_make_table(first_model=mr.rewp_sym_med, second_model=mr.fn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medicine use"))
+aim2_table_med <- DISS_make_table(first_model=mr.rewp_sym_med, second_model=mr.fn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 
 # Aim 3
 mr.piltp_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 mr.piltn_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 
-aim3_table_med <- DISS_make_table(first_model=mr.piltp_sym_med, second_model=mr.piltn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medicine use"))
+aim3_table_med <- DISS_make_table(first_model=mr.piltp_sym_med, second_model=mr.piltn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 ```
 ```{r}
 apa_table(
@@ -590,6 +587,22 @@ apa_table(aim3_table_med,
           col_spanners = list(` ` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)))
+```
+
+```{r I2N with discriminability}
+mr.rb_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
+
+mr.la_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
+
+I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la_i2n_disc, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
+```
+```{r}
+apa_table(I2N_table_disc,
+          caption="Multiple regressions of behavioral reward bias and loss avoidance predicted by SES covarying for accuracy",
+          col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
+          align = c("l", rep("c", 6)),
+          escape=TRUE)
 ```
 
 ```{r Other ERP components, eval=FALSE}

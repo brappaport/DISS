@@ -91,7 +91,7 @@ classoption       : "man"
 output            : papaja::apa6_pdf
 ---
 
-```{r setup, include=FALSE, echo=FALSE, results='hide', message=FALSE}
+```{r setup, include=FALSE, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
     rm(list=ls())     #Remove everything from environment
 
   renv::restore()     #restore environment
@@ -381,12 +381,14 @@ fitm <- round(cbind(fitm_simple, fitm_full),3)
 lavtest_full <- lavTestLRT(fit_simple_model, fit_full_model)
 chi_diff <- myround(lavtest_full$`Chisq diff`[2], 2)
 # chi_diff
+note1 <- sprintf("$\\Delta$ $\\chi$^2^ = 13.61")
 
 apa_table(fitm,
           caption="Model fit of SEM model of hypotheses",
-          note=paste(expression(Delta),expression(chi^2),"=",13.61),
+          note=note1,
           col.names = c("Fit measure","Simplified model","Full model"),
-          align = c("l", rep("c", 2)))
+          align = c("l", rep("c", 2)),
+          escape=TRUE)
 ```
 
 ```{r Figure 1, fig.cap = "Depiction of Island Getaway ERP task trial and schematic of Probabilistic Incentive Learning Task (PILT)", out.width='100%'}
@@ -497,7 +499,7 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
 ```{r Facetplots, echo=FALSE, dev='pdf', fig.height=10, fig.width=7, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback", out.width='100%'}
 tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_plot,
           labels = c("A","B","C","D"),
-          label.x = c(rep(.02,4)),
+          label.x = c(rep(.04,4)),
           label.y = c(rep(1,4)),
           common.legend = TRUE, legend = "bottom",
           ncol = 1, nrow = 4,
@@ -531,9 +533,9 @@ full_model_plot <- semPaths(fit_full_model,
          edge.color="black",
          whatLabels="std",
          layout = node_ly,
-         sizeMan = 16,
+         sizeMan = 13,
          label.scale=FALSE,
-         label.font=14,
+         label.font=10,
          edge.label.cex = 1,
          edge.label.position=.4,
          optimizeLatRes=TRUE,
@@ -542,7 +544,7 @@ full_model_plot <- semPaths(fit_full_model,
 ```
 
 (ref:SEM-figure-caption) 
-```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: Values are beta coefficient (p values)", out.width='100%'}
+```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: values are beta coefficients (p values)", out.width='100%'}
 plot(full_model_plot)
 ```
 
@@ -556,10 +558,12 @@ ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
 
 
 
+
+
+
 \newpage
-
+\newpage
 # Supplemental Materials
-
 ```{r With discriminability}
 mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -631,7 +635,7 @@ apa_table(I2N_table_disc,
           escape=TRUE)
 ```
 
-```{r Other ERP components, eval=FALSE}
+```{r Other ERP components}
 mr.p2_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(p2_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 mr.n1_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(n1_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 

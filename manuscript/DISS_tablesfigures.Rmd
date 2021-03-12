@@ -235,12 +235,12 @@ DISS_make_table <- function(first_model, second_model, predictors) {
   colnames(table_x) <- c("Predictor", "$\\beta$","95% CI", "$p$", "$\\beta$","95% CI", "$p$")
   table_x[,1] <- as.character(summary(first_model)$term)
   table_x[,2] <- round(summary(first_model)$est,3)
-  table_x[,3] <- paste0("(",round(summary(first_model, conf.int=TRUE, conf.level = 0.95)[,7],3),
-                         ", ",round(summary(first_model, conf.int=TRUE, conf.level = 0.95)[,8],3),")")
+  table_x[,3] <- paste0("(",round(summary(first_model, conf.int=TRUE, conf.level = 0.95)[,7],2),
+                         ", ",round(summary(first_model, conf.int=TRUE, conf.level = 0.95)[,8],2),")")
   table_x[,4] <- round(summary(first_model)$p,3)
   table_x[,5] <- round(summary(second_model)$est,3)
-  table_x[,6] <- paste0("(",round(summary(second_model, conf.int=TRUE, conf.level = 0.95)[,7],3),
-                         ", ",round(summary(second_model, conf.int=TRUE, conf.level = 0.95)[,8],3),")")
+  table_x[,6] <- paste0("(",round(summary(second_model, conf.int=TRUE, conf.level = 0.95)[,7],2),
+                         ", ",round(summary(second_model, conf.int=TRUE, conf.level = 0.95)[,8],2),")")
   table_x[,7] <- round(summary(second_model)$p,3)
   table_x$Predictor <- predictors
   return(table_x)
@@ -312,6 +312,7 @@ library(lavaan)     #SEM
 library(lavaanPlot) #plot SEMs
 library(semTools)   #extra functions for SEM
 library(semPlot)    #plot SEMS
+library(magick)
 
 simple_model <- '
 #Define residual error
@@ -493,7 +494,7 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
         plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0.5), "lines"))
 ```
 
-```{r Facet plots together, echo=FALSE, dev='pdf', fig.height=10, fig.width=7, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback", out.width='100%'}
+```{r Facetplots, echo=FALSE, dev='pdf', fig.height=10, fig.width=7, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback", out.width='100%'}
 tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_plot,
           labels = c("A","B","C","D"),
           label.x = c(rep(.02,4)),
@@ -507,7 +508,7 @@ tfsf.plots
 # png("../work/figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
 
-```{r SEM plot, include=FALSE}
+```{r SEMplot1, include=FALSE}
 node_ly <- matrix(c(-0.5, -0.5, 
                0, -0.5, 
                -0.5, 0, 
@@ -530,7 +531,7 @@ full_model_plot <- semPaths(fit_full_model,
          edge.color="black",
          whatLabels="std",
          layout = node_ly,
-         sizeMan = 8,
+         sizeMan = 16,
          label.scale=FALSE,
          label.font=14,
          edge.label.cex = 1,
@@ -540,17 +541,20 @@ full_model_plot <- semPaths(fit_full_model,
          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
 ```
 
-```{r SEM plot printing, echo=FALSE, fig.cap = "SEM model of all hypotheses", out.width='100%'}
+(ref:SEM-figure-caption) 
+```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: Values are beta coefficient (p values)", out.width='100%'}
 plot(full_model_plot)
 ```
 
-```{r I2N plot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "RewP to social acceptance and income to needs ratio", out.width='100%'}
+```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "RewP to social acceptance and income to needs ratio", out.width='100%'}
 ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(method="lm") +
   labs(x="Income to needs ratio", y="RewP (residuals)") +
   theme_apa()
 ```
+
+
 
 \newpage
 
@@ -595,7 +599,7 @@ aim3_table_med <- DISS_make_table(first_model=mr.piltp_sym_med, second_model=mr.
 
 ```{r}
 apa_table(
-  list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
+  list(`Reward bias and loss avoidance`=aim1_table_med, `Psychopathology`=aim2_table_med),
   merge_method="indent",
             caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance and psychopathology covarying for recent psychotropic medication use",
           col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
@@ -620,7 +624,7 @@ I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la
 
 ```{r}
 apa_table(I2N_table_disc,
-          caption="Multiple regressions of behavioral reward bias and loss avoidance predicted by SES covarying for accuracy",
+          caption="Multiple regressions of behavioral reward bias and loss avoidance covarying for accuracy",
           col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)),
@@ -640,9 +644,9 @@ aim2_table_p2n1 <- DISS_make_table(first_model=mr.p2_sym, second_model=mr.n1_sym
 
 ```{r}
 apa_table(
-  list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
+  list(`Reward bias and loss avoidance`=aim1_table_p2n1, `Psychopathology`=aim2_table_p2n1),
   merge_method="indent",
-            caption="Multiple regressions of P2/N1 predicted by behavioral reward bias and loss avoidance and psychopathology covarying for recent psychotropic medication use",
+            caption="Multiple regressions of P2/N1 predicted by behavioral reward bias and loss avoidance and psychopathology",
           col_spanners = list(`Predictors` = c(1),`P2` = c(2,4), `N1` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6))

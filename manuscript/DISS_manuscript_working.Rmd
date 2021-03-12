@@ -275,7 +275,7 @@ rewp_dep_lm <- summary(pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic
 rewp_dep_ci <- paste0(myround(rewp_dep_lm[2,]$`2.5 %`,2),", ", myround(rewp_dep_lm[2,]$`97.5 %`,2))
 ```
 
-### Association between RewP/FN and reward bias and loss avoidance 
+### Association between RewP/FN and reward bias and loss avoidance
 
 ```{r Aim 1}
 mr.rewp_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
@@ -288,7 +288,7 @@ mr.fn_pilt_med_ci <- paste0(myround(mr.fn_pilt_med[3,]$`2.5 %`,2),", ", myround(
 
 Multiple regression models showed that the RewP to social acceptance feedback was not significantly associated with behavioral reward bias. However, the FN to social rejection feedback was significantly related to behavioral loss avoidance (Table 3), such that a greater negative deflection to rejection feedback was associated with a greater behavioral avoidance of the punished response in the PILT-N task. Zero order correlations further confirmed this pattern of results (Table 2), though at trend level ($r$=`r myround(fn_piltn_lm[2,]$estimate,2)`, 95% CI [`r fn_piltn_ci`], *p*=`r myround(fn_piltn_lm[2,]$p.value,2)`). Moreover, these results were consistent when accuracy (i.e. participants' ability to correctly discriminate between the stimuli) was included in the model (Table S\#). Results from supplemental analyses including recent psychotropic medication use were largely consistent, except that the FN to rejection was associated with loss avoidance at trend levels ($\beta$=`r myround(mr.fn_pilt_med[3,]$estimate,2)`, 95% CI [`r mr.fn_pilt_med_ci`], *p*=`r myround(mr.fn_pilt_med[3,]$p,2)`, Table S\#).
 
-### Association between RewP/FN and depression and social anxiety severity 
+### Association between RewP/FN and depression and social anxiety severity
 
 ```{r Aim 2}
 mr.rewp_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
@@ -298,7 +298,7 @@ mr.fn_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z 
 
 Multiple regression models showed that the RewP to social acceptance feedback was not significantly associated with depression severity, nor was the FN to social rejection feedback significantly associated with depression or social anxiety severity (see Table 3). Zero order correlations further confirmed this pattern of results (Table 2), however, the effect size of the correlation between the RewP and depression severity ($r$=`r myround(rewp_dep_lm[2,]$estimate,2)`, 95% CI [`r rewp_dep_ci`], *p*=`r myround(rewp_dep_lm[2,]$p.value,2)`) was comparable to two large prior studies using indepedent samples ($r$=-0.10, total $N$=`r 412+231`; @kujawaSocialProcessingEarly2017; @peggBluntedSocialReward2019). Results from supplemental analyses including recent psychotropic medication use were consistent (Table S\#).
 
-### Association between Reward bias/loss avoidance and depression and social anxiety severity 
+### Association between Reward bias/loss avoidance and depression and social anxiety severity
 
 ```{r Aim 3}
 mr.piltp_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
@@ -308,7 +308,7 @@ mr.piltn_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_
 
 Multiple regression models showed that reward bias was not significantly associated with depression severity, nor was loss avoidance significantly associated with depression or social anxiety severity (see Table 4). Zero order correlations further confirmed this pattern of results (Table 2). Results from supplemental analyses including recent psychotropic medication use were consistent (Table S\#).
 
-### Structural equation modeling of hypotheses 
+### Structural equation modeling of hypotheses
 
 ```{r SEM, include=FALSE}
 library(lavaan)     #SEM

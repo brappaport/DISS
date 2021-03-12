@@ -222,6 +222,7 @@ zero_order_matrix_full <-  as.data.frame(zero_order_matrix) %>%
   dplyr::select(c("Mean SD"), everything())
 zero_order_matrix_full[is.na(zero_order_matrix_full)] <- "—"
 ```
+
 ```{r}
 apa_table(zero_order_matrix_full, 
           landscape = TRUE, 
@@ -253,6 +254,7 @@ mr.fn_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z 
 
 aim1_table <- DISS_make_table(first_model=mr.rewp_pilt, second_model=mr.fn_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 ```
+
 ```{r}
 # apa_table(aim1_table,
 #           caption="Multiple regressions of RewP/FN and behavioral reward bias and loss avoidance",
@@ -269,6 +271,7 @@ mr.fn_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z 
 
 aim2_table <- DISS_make_table(first_model=mr.rewp_sym, second_model=mr.fn_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 ```
+
 ```{r}
 # apa_table(aim2_table,
 #           caption="Multiple regressions of RewP/FN and depression and social anxiety severity",
@@ -276,6 +279,7 @@ aim2_table <- DISS_make_table(first_model=mr.rewp_sym, second_model=mr.fn_sym, p
 #           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
 #           align = c("l", rep("c", 6)))
 ```
+
 ```{r}
 apa_table(
   list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
@@ -294,6 +298,7 @@ mr.piltn_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_
 
 aim3_table <- DISS_make_table(first_model=mr.piltp_sym, second_model=mr.piltn_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 ```
+
 ```{r}
 apa_table(aim3_table,
           caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology",
@@ -354,24 +359,6 @@ fitm_simple <- fitmeasures(fit_simple_model, c("chisq", "df", "pvalue", "cfi", "
 fitm_full <- fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
 
 
-ly <- matrix(c(-0.5, -0.5, 
-               0, -0.5, 
-               -0.5, 0, 
-               0, 0, 
-               -0.5, 0.5, 
-               0, 0.5), ncol = 2, byrow = TRUE)
-
-semPaths(fit_full_model, 
-         intercepts=FALSE,
-         residual=TRUE,
-         edge.color="black",
-         whatLabels="std",
-         layout = ly,
-         sizeMan = 12,
-         edge.label.cex = 1.5,
-         fade=FALSE,
-         nodeLabels=c("Reward bias", "Loss avoidance", "RewP", "FN", "Depression", "Social Anxiety"))
-
 # Reward_bias_20 ~~ Reward_bias_20
 # Loss_bias_20 ~~ Loss_bias_20
 # rewp_r ~~ rewp_r
@@ -387,6 +374,7 @@ semPaths(fit_full_model,
 # summary(fit_simple_model_mi)
 # summary(fit_full_model_mi)
 ```
+
 ```{r}
 fitm <- round(cbind(fitm_simple, fitm_full),3)
 lavtest_full <- lavTestLRT(fit_simple_model, fit_full_model)
@@ -519,6 +507,43 @@ tfsf.plots
 # png("../work/figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
 
+```{r SEM plot, include=FALSE}
+node_ly <- matrix(c(-0.5, -0.5, 
+               0, -0.5, 
+               -0.5, 0, 
+               0, 0, 
+               -0.5, 0.5, 
+               0, 0.5), ncol = 2, byrow = TRUE)
+
+
+
+#extracting the parameters from the sem model and selecting the interactions relevant for the semPaths (here, I need 12 estimates and p-values)
+table2<-parameterEstimates(fit_full_model,standardized=TRUE)  %>%  head(17)
+
+#turning the chosen parameters into text
+b<-gettextf('%.2f (%.2f)', table2$std.all, digits=table2$pvalue)
+
+full_model_plot <- semPaths(fit_full_model, 
+         intercepts=FALSE,
+         residual=TRUE,
+         edgeLabels=b,
+         edge.color="black",
+         whatLabels="std",
+         layout = node_ly,
+         sizeMan = 8,
+         label.scale=FALSE,
+         label.font=14,
+         edge.label.cex = 1,
+         edge.label.position=.4,
+         optimizeLatRes=TRUE,
+         fade=FALSE,
+         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+```
+
+```{r SEM plot printing, echo=FALSE, fig.cap = "SEM model of all hypotheses", out.width='100%'}
+plot(full_model_plot)
+```
+
 ```{r I2N plot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "RewP to social acceptance and income to needs ratio", out.width='100%'}
 ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
@@ -527,16 +552,10 @@ ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   theme_apa()
 ```
 
-
-
-
-
-
-
-
 \newpage
 
 # Supplemental Materials
+
 ```{r With discriminability}
 mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 
@@ -544,6 +563,7 @@ mr.fn_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_
 
 aim1_table_disc <- DISS_make_table(first_model=mr.rewp_pilt_disc, second_model=mr.fn_pilt_disc, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 ```
+
 ```{r}
 apa_table(aim1_table_disc,
           caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance covarying for accuracy",
@@ -572,6 +592,7 @@ mr.piltn_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5c
 
 aim3_table_med <- DISS_make_table(first_model=mr.piltp_sym_med, second_model=mr.piltn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 ```
+
 ```{r}
 apa_table(
   list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
@@ -596,6 +617,7 @@ mr.la_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdi
 
 I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la_i2n_disc, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 ```
+
 ```{r}
 apa_table(I2N_table_disc,
           caption="Multiple regressions of behavioral reward bias and loss avoidance predicted by SES covarying for accuracy",
@@ -615,6 +637,7 @@ mr.n1_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(n1_r_z ~ S5cdic_bdi_perc_z 
 aim1_table_p2n1 <- DISS_make_table(first_model=mr.p2_pilt, second_model=mr.n1_pilt, predictors=c("Intercept", "Reward bias", "Loss avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 aim2_table_p2n1 <- DISS_make_table(first_model=mr.p2_sym, second_model=mr.n1_sym, predictors=c("Intercept", "Depression", "Social anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
 ```
+
 ```{r}
 apa_table(
   list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
@@ -625,5 +648,3 @@ apa_table(
           align = c("l", rep("c", 6))
 )
 ```
-
-

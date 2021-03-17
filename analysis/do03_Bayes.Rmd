@@ -37,11 +37,12 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(ggplot2)    #creates plots
   library(brms)       #run Bayes multiple regression analyses
   library(cmdstanr)
+  library(bayestestR)
+  library(see)
   library(mice)       #multiple imputation
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
   library(pander)     #make nice tables
-  library(future)     #parallel processing
   library(workflowr)  #helps with workflow
 ```
 
@@ -68,7 +69,37 @@ Remember to immediately rename and remove. Avoid overwriting old data.
       rm("DISS_do01.imp_z")
 ```      
 
-# 5. Primary confirmatory analyses done with Bayes
+# Correlation between RewP and Depression
+```{r}
+f1 <- 
+  brm_multiple(data = DISS_do02.imp_z, 
+      family = gaussian,
+      rewp_r_z ~ 1 + S5cdic_bdi_perc_z,
+      prior = c(prior(normal(0, 1), class = Intercept),
+                prior(normal(-0.1, 0.1), class = b),
+                prior(normal(0, 1), class = sigma)),
+      chains = 4, cores = 4, 
+      save_pars=save_pars(all=TRUE),
+      sample_prior="yes",
+      file="./analysis/corr_brms",
+      seed=314)
+f1
+
+# Compute indices for ROPE
+pd <- p_direction(f1)
+percentage_in_rope <- rope(f1, ci=0.89)
+
+plot(pd)
+plot(percentage_in_rope)
+
+pooled_r = -0.1
+pooled_rse = sqrt((1-(0.1^2))/(757-2))
+
+# Compute Bayes Factor
+f1_un <- unupdate(f1, newdata = DISS_do02.imp_z)
+f1_BF <- bayesfactor_parameters(posterior=f1, null = 0, prior = f1_un)
+f1_BF$BF[2]
+```
 
 ## 5.2. Aim 1: Relationship between RewP/FN and PILT-P/N
 #### 5.2.1. Multiple regression
@@ -97,6 +128,7 @@ conditional_effects(mr.rewp_pilt)
 pp_check(mr.rewp_pilt, nsamples=20)
 ```
 
+# All other analyses
 #### 5.2.4. FN/PILT-Bayes
 ```{r}
 plan(multicore)
@@ -175,19 +207,9 @@ mr.rewp_sym_null <- brm_multiple(family = gaussian,
 summary(mr.rewp_sym_null)
 
 bayes_factor(mr.rewp_sym, mr.rewp_sym_null)
+```
 
-#Correlation
-f1 <- 
-  brm_multiple(data = DISS_do02.imp_z, 
-      family = gaussian,
-      rewp_r_z ~ 1 + S5cdic_bdi_perc_z,
-      prior = c(prior(normal(0, 1), class = Intercept),
-                prior(normal(-0.1, 1), class = b),
-                prior(normal(0, 1), class = sigma)),
-      chains = 4, cores = 4, 
-      seed = 314)
-summary(f1)
-
+```{r}
 cor.rewp_sym <- brm_multiple(data = DISS_do02.imp_z, 
       family = gaussian,
       mvbind(rewp_r_z, S5cdic_bdi_perc_z) ~ 1,
@@ -216,12 +238,6 @@ ggplot(DISS_do02.imp_z, aes(y=rewp_r_z, x=S5cdic_bdi_perc_z)) +
   geom_point()
 
 ```
-
-#### Bayes factor
-```{r}
-pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-```
-
 
 #### 5.3.4 FN/Sym-Bayes
 ```{r}

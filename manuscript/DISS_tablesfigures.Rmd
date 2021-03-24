@@ -165,6 +165,7 @@ var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_
 var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
 ```
 
+\newpage
 ```{r}
 demo_table <- FullTable1(DISS_do02_nooutliers,
            vars=c("T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f","S5psychmed_dos"),
@@ -177,6 +178,7 @@ apa_table(as.data.frame(demo_table$table),
           caption="Demographics of study sample",
           note="N=9 missing recent psychotropic medication use. Mean (SD) for continuous variables or N (%) for categorical variables presented.")
 ```
+
 
 ```{r Zero-order correlations, include=FALSE}
 zero_order_cor <- micombine.cor(DISS_do02.imp_z, variables=c("rewp_r_z","fn_r_z",
@@ -226,7 +228,7 @@ zero_order_matrix_full[is.na(zero_order_matrix_full)] <- "—"
 ```{r}
 apa_table(zero_order_matrix_full, 
           landscape = TRUE, 
-          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while residual standard errors (rse) are presented in the lower diagonal")
+          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while relative standard errors (rse) are presented in the lower diagonal")
 ```
 
 ```{r DISS_make_table, include=FALSE}
@@ -380,18 +382,17 @@ fitm_full <- fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmse
 fitm <- round(cbind(fitm_simple, fitm_full),3)
 lavtest_full <- lavTestLRT(fit_simple_model, fit_full_model)
 chi_diff <- myround(lavtest_full$`Chisq diff`[2], 2)
-# chi_diff
-note1 <- sprintf("$\\Delta$ $\\chi$^2^ = 13.61")
+SEM_p <- myround(lavtest_full$`Pr(>Chisq)`[2], 2)
 
 apa_table(fitm,
           caption="Model fit of SEM model of hypotheses",
-          note=note1,
+          note=paste0("$\\Delta$ $\\chi^{2}$=",chi_diff,", $p$=",SEM_p),
           col.names = c("Fit measure","Simplified model","Full model"),
           align = c("l", rep("c", 2)),
-          escape=TRUE)
+          escape=FALSE) #make sure escape is set to FALSE to use special characters in the note
 ```
 
-```{r Figure 1, fig.cap = "Depiction of Island Getaway ERP task trial and schematic of Probabilistic Incentive Learning Task (PILT)", out.width='100%'}
+```{r Figure 1, fig.cap = "A) Depiction of Island Getaway (IG) ERP task trial and B) schematic of Probabilistic Incentive Learning Task (PILT).", out.width='100%'}
 knitr::include_graphics('../figures/IG_PILT.png')
 ```
 
@@ -401,7 +402,6 @@ DISS_do02_grandaverage_time <- DISS_do02_grandaverage %>%
   dplyr::select(-Filename) %>% #remove 'Filename' variable
   mutate(Time=rep(seq(-200,799,2),234)) %>% #create Time variable from -200 to 798 by intervals of 2ms
   dplyr::select(Subid,Condition,Time,everything()) %>% #rearrange data to put Subid, Condition, and Time first
-  filter(Time>0) %>% #remove data from pre-stimulus interval (-200 to 0ms)
   arrange(Subid,Condition,Time) %>% #sort by Subid, Condition, and then Time
   group_by(Condition,Time) %>% #grouping required for summarise in the next step
   dplyr::summarise(Cz_ga = mean(Cz),
@@ -411,6 +411,12 @@ DISS_do02_grandaverage_time <- DISS_do02_grandaverage %>%
 # Create residualized differences
 DISS_do02_grandaverage_time$Cz_ga_resid <- stdres(lm(Cz_ga_ACC ~ Cz_ga_REJ, DISS_do02_grandaverage_time, na.action=na.exclude))
 DISS_do02_grandaverage_time$FC2_ga_resid <- stdres(lm(FC2_ga_ACC ~ FC2_ga_REJ, DISS_do02_grandaverage_time, na.action=na.exclude))
+
+top_theme <- theme(legend.position = "none",
+        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0), "lines"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y=element_text(size=10))
 
 cz_ga_plot <- ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid")], Type, Feedback, -Time), aes(x=Time, y=Feedback, color=Type)) +
   geom_line(size=1) +
@@ -422,11 +428,8 @@ cz_ga_plot <- ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_AC
   labs(x=NULL, y="Average Cz activity (µV)") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-4,11), breaks = seq(-4, 11.5, by = 2)) +
-  theme_apa() +
-  theme(legend.position = "none",
-        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0), "lines"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank())
+  theme_apa() + top_theme
+  
 ```
 
 ```{r TF2SF1 (RewP)}
@@ -445,11 +448,7 @@ tf2sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf2sf1_ga[,c("Time","ACC","REJ","
   labs(x=NULL, y="Average FC2 activity (µV)") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
-  theme_apa() +
-  theme(legend.position = "none",
-        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0), "lines"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank())
+  theme_apa() + top_theme
 ```
 
 ```{r TF4SF1 (P2)}
@@ -468,11 +467,7 @@ tf4sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf4sf1_ga[,c("Time","ACC","REJ","
   labs(x=NULL, y="Average Cz activity (µV)") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
-  theme_apa() +
-  theme(legend.position = "none",
-        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0), "lines"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank())
+  theme_apa() + top_theme
 ```
 
 ```{r TF7SF1 (N1)}
@@ -493,10 +488,23 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
   scale_y_continuous(limits=c(-1,1), breaks = seq(-1, 1, by = .5)) +
   theme_apa() +
   theme(legend.position = "none",
-        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0.5), "lines"))
+        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0.5), "lines"),
+        axis.text.y=element_text(size=10))
 ```
 
-```{r Facetplots, echo=FALSE, dev='pdf', fig.height=10, fig.width=7, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback", out.width='100%'}
+```{r Facetplots, echo=FALSE, dev='pdf', fig.height=8, fig.width=5, fig.align="center", fig.cap = "ERP waveforms and scalp distributions to acceptance and rejection feedback. A) Grand average ERP activity at Cz electrode; B-D: ERP activity at PCA components that significantly different between acceptance and rejection feedback, including B) RewP component: temporal factor (TF) 2 and spatial factor (SF) 1, C) P2 component: TF 4 and SF 1, and D) N1 component: TF 7 and SF 1. Scalp distributions represent the response to acceptance relative to rejection.", out.width='100%'}
+library(tiff)
+library(patchwork)
+
+ACC_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_RewP_Scalp.tif", native = TRUE))
+REJ_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_RewP_Scalp.tif", native = TRUE)) # read in scalp image
+
+ACC_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_P2_Scalp.tif", native = TRUE)) # read in scalp image
+REJ_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_P2_Scalp.tif", native = TRUE)) # read in scalp image
+
+ACC_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_N1_Scalp.tif", native = TRUE)) # read in scalp image
+REJ_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_N1_Scalp.tif", native = TRUE)) # read in scalp image
+
 tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_plot,
           labels = c("A","B","C","D"),
           label.x = c(rep(.04,4)),
@@ -504,6 +512,21 @@ tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_pl
           common.legend = TRUE, legend = "bottom",
           ncol = 1, nrow = 4,
           align="v")
+
+tfsf.plots_scalps <- ggarrange(cz_ga_plot, NULL, NULL,
+          tf2sf1_ga_plot, ACC_RewP_Scalp, REJ_RewP_Scalp,
+          tf4sf1_ga_plot, ACC_P2_Scalp, REJ_P2_Scalp,
+          tf7sf1_ga_plot, ACC_N1_Scalp, REJ_N1_Scalp,
+          labels = c("A","","",
+                     "B","","",
+                     "C","","",
+                     "D","",""),
+          label.x = c(rep(.04,12)),
+          label.y = c(rep(1,12)),
+          common.legend = TRUE, legend = "bottom",
+          ncol = 3, nrow = 4,
+          align="v")
+
 tfsf.plots
 
 # tiff("../work/figures/Figure2.tiff", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
@@ -511,12 +534,12 @@ tfsf.plots
 ```
 
 ```{r SEMplot1, include=FALSE}
-node_ly <- matrix(c(-0.5, -0.5, 
-               0, -0.5, 
-               -0.5, 0, 
+node_ly <- matrix(c(-0.25, -0.25, 
+               0, -0.25, 
+               -0.25, 0, 
                0, 0, 
-               -0.5, 0.5, 
-               0, 0.5), ncol = 2, byrow = TRUE)
+               -0.25, 0.25, 
+               0, 0.25), ncol = 2, byrow = TRUE)
 
 
 
@@ -529,26 +552,54 @@ b<-gettextf('%.2f (%.2f)', table2$std.all, digits=table2$pvalue)
 full_model_plot <- semPaths(fit_full_model, 
          intercepts=FALSE,
          residual=TRUE,
+         style="mx",
+         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
+         edge.width=3,
+         curve=c(rep(0,8),-2,0,2,rep(0,9)),
          edgeLabels=b,
-         edge.color="black",
          whatLabels="std",
          layout = node_ly,
-         sizeMan = 13,
+         shapeMan="rectangle",
+         node.height=2,
+         node.width=2.75,
          label.scale=FALSE,
-         label.font=10,
          edge.label.cex = 1,
-         edge.label.position=.4,
+         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+         optimizeLatRes=TRUE,
+         fade=FALSE,
+         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+plot(full_model_plot)
+
+
+semPaths(fit_full_model, 
+         style="mx",
+         intercepts=FALSE,
+         residual=TRUE,
+         curve=c(rep(0,8),-2,0,2,rep(0,9)),
+         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
+         edgeLabels=NULL,
+         edge.width=3,
+         whatLabels="std",
+         layout = node_ly,
+         shapeMan="rectangle",
+         node.height=2,
+         node.width=2.75,
+         label.scale=FALSE,
+         edge.label.cex = 1,
+         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
          optimizeLatRes=TRUE,
          fade=FALSE,
          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
 ```
 
 (ref:SEM-figure-caption) 
-```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: values are beta coefficients (p values)", out.width='100%'}
+```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: Values are beta coefficients (p values)", out.width='100%'}
 plot(full_model_plot)
 ```
 
-```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "RewP to social acceptance and income to needs ratio", out.width='100%'}
+```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "Relationship between RewP to social acceptance and income to needs ratio", out.width='100%'}
 ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(method="lm") +
@@ -564,6 +615,29 @@ ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
 \newpage
 \newpage
 # Supplemental Materials
+```{r PCA factors}
+pca_factors <- read.csv(here("../data/PCA_factors_full_corrected.csv"))
+```
+```{r PCA factors table, results="asis"}
+apa_table(pca_factors,
+          col.names=c("Temporospatial\\\\factor combination",
+                      "Unique variance\\\\explained",
+                      "Temporal loading\\\\peak (ms)",
+                      "Peak electrode",
+                      "Accept vs Reject\\\\(t value)"),
+          caption="Temporospatial factors that differed between social acceptance and rejection feedback",
+          note="t values derived from robust ANOVA; TF = temporal factor; SF = spatial factor.",
+          align=c('l',rep('c',4)),
+          escape=TRUE)
+
+
+# col.names=c("Temporosptial factor combination",
+#                       "Unique variance explained (%)",
+#                       "Temporal loading peak (ms)",
+#                       "Peak electrode",
+#                       "Accept vs Reject (t value)"),
+```
+
 ```{r With discriminability}
 mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 

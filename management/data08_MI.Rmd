@@ -170,9 +170,6 @@ pred <- m0$predictorMatrix
 pred[, colnames(pred) %in% c("S5psychmed_dos_f")] <- 0
 DISS_do01.imp <- mice(MI_data, predictorMatrix=pred, method=meth, m=10, seed=314)
 
-DISS_do01.imp <- mice(DISS_do01_nooutliers[,c(all_measures_list)], predictorMatrix=pred, method=meth, m=10, seed=314)
-
-# DISS_do01.imp <- mice(DISS_do01_nooutliers[,c(all_measures_list, "S5psychmed_dos_f")], m = 10, method = 'pmm', seed=314) #generate 10 imputed datasets
 summary(DISS_do01.imp)
 
 DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)

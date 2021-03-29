@@ -8,68 +8,14 @@ author:
     corresponding : yes    # Define only one corresponding author
     address       : "One Brookings Drive St. Louis, MO 63130"
     email         : "brappaport@wustl.edu"
-    role:         # Contributorship roles (e.g., CRediT, https://casrai.org/credit/)
-      - Conceptualization
-      - Formal Analysis
-      - Writing - Original Draft Preparation
-      - Writing - Review & Editing
-  - name          : "Autumn Kujawa"
-    affiliation   : "2"
-    role:
-      - Methodology
-      - Conceptualization
-      - Writing - Review & Editing
-  - name          : "Kodi B. Arfer"
-    affiliation   : "3"
-    role:
-      - Software
-      - Writing - Review & Editing
-  - name          : "Samantha Pegg"
-    affiliation   : "2"
-    role:
-      - Formal Analysis
-      - Writing - Review & Editing
-  - name          : "Danielle Kelly"
-    affiliation   : "4"
-    role:
-      - Writing - Review & Editing
-      - Supervision
-      - Resources
-      - Funding acquisition
-  - name          : "Joan L. Luby"
-    affiliation   : "4"
-    role:
-      - Resources
-      - Funding acquisition
-      - Writing - Review & Editing
-  - name          : "Deanna M. Barch"
-    affiliation   : "1,4,5"
-    role:
-      - Conceptualization
-      - Supervision
-      - Resources
-      - Funding acquisition
-      - Writing - Review & Editing
 
 affiliation:
   - id            : "1"
     institution   : "Psychological & Brain Science, Washington University in St. Louis"
-  - id            : "2"
-    institution   : "Department of Psychology & Human Development, Vanderbilt University"
-  - id            : "3"
-    institution   : "Center for HIV Identification, Prevention, and Treatment Services, University of California"
-  - id            : "4"
-    institution   : "Department of Psychiatry, School of medication, Washington University in St. Louis"
-  - id            : "5"
-    institution   : "Department of Radiology, School of medication, Washington University in St. Louis"
     
 
 authornote: |
   1 Psychological & Brain Science, Washington University in St. Louis, St. Louis, MO  
-  2 Department of Psychology & Human Development, Vanderbilt University, Nashville, TN  
-  3 Center for HIV Identification, Prevention, and Treatment Services, University of California, Los Angeles, Los Angeles, CA  
-  4 Department of Psychiatry, School of medication, Washington University in St. Louis, St. Louis, MO  
-  5 Department of Radiology, School of medication, Washington University in St. Louis, St. Louis, MO  
   
 keywords          : "social feedback, ERP, depression, social anxiety, reward, reward positivity, feedback negativity"
 wordcount         : "X"
@@ -260,7 +206,7 @@ aim1_table <- DISS_make_table(first_model=mr.rewp_pilt, second_model=mr.fn_pilt,
 ```{r}
 # apa_table(aim1_table,
 #           caption="Multiple regressions of RewP/FN and behavioral reward bias and loss avoidance",
-#           col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+#           col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
 #           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
 #           align = c("l", rep("c", 6)),
 #           escape=TRUE)
@@ -277,7 +223,7 @@ aim2_table <- DISS_make_table(first_model=mr.rewp_sym, second_model=mr.fn_sym, p
 ```{r}
 # apa_table(aim2_table,
 #           caption="Multiple regressions of RewP/FN and depression and social anxiety severity",
-#           col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+#           col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
 #           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
 #           align = c("l", rep("c", 6)))
 ```
@@ -304,7 +250,7 @@ aim3_table <- DISS_make_table(first_model=mr.piltp_sym, second_model=mr.piltn_sy
 ```{r}
 apa_table(aim3_table,
           caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology",
-          col_spanners = list(` ` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
+          col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)))
 ```
@@ -392,11 +338,11 @@ apa_table(fitm,
           escape=FALSE) #make sure escape is set to FALSE to use special characters in the note
 ```
 
-```{r Figure 1, fig.cap = "A) Depiction of Island Getaway (IG) ERP task trial and B) schematic of Probabilistic Incentive Learning Task (PILT).", out.width='100%'}
+```{r schematic, fig.cap = "A) Depiction of Island Getaway (IG) ERP task trial and B) schematic of Probabilistic Incentive Learning Task (PILT).", out.width='100%'}
 knitr::include_graphics('../figures/IG_PILT.png')
 ```
 
-```{r Make and plot grand averages}
+```{r Make and plot grand averages, warning=FALSE}
 # Drop unneeded columns and add Time variable
 DISS_do02_grandaverage_time <- DISS_do02_grandaverage %>%
   dplyr::select(-Filename) %>% #remove 'Filename' variable
@@ -415,8 +361,7 @@ DISS_do02_grandaverage_time$FC2_ga_resid <- stdres(lm(FC2_ga_ACC ~ FC2_ga_REJ, D
 top_theme <- theme(legend.position = "none",
         plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0), "lines"),
         axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y=element_text(size=10))
+        axis.text.x = element_blank())
 
 cz_ga_plot <- ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid")], Type, Feedback, -Time), aes(x=Time, y=Feedback, color=Type)) +
   geom_line(size=1) +
@@ -425,11 +370,10 @@ cz_ga_plot <- ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_AC
   scale_color_manual(breaks=c("Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid"),
                      values=c("Cz_ga_ACC"="green", "Cz_ga_resid"="black", "Cz_ga_REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="Average Cz activity (µV)") +
+  labs(x=NULL, y="") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-4,11), breaks = seq(-4, 11.5, by = 2)) +
-  theme_apa() + top_theme
-  
+  theme_apa(base_size = 12) + top_theme
 ```
 
 ```{r TF2SF1 (RewP)}
@@ -445,10 +389,10 @@ tf2sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf2sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="Average FC2 activity (µV)") +
+  labs(x=NULL, y="") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
-  theme_apa() + top_theme
+  theme_apa(base_size = 12) + top_theme
 ```
 
 ```{r TF4SF1 (P2)}
@@ -464,10 +408,10 @@ tf4sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf4sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="Average Cz activity (µV)") +
+  labs(x=NULL, y="") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
-  theme_apa() + top_theme
+  theme_apa(base_size = 12) + top_theme
 ```
 
 ```{r TF7SF1 (N1)}
@@ -483,16 +427,15 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x="Time (ms)", y="Average Cz activity (µV)") +
+  labs(x="Time (ms)", y="") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,1), breaks = seq(-1, 1, by = .5)) +
-  theme_apa() +
   theme(legend.position = "none",
-        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0.5), "lines"),
-        axis.text.y=element_text(size=10))
+        plot.margin = unit(c(top=0,left=0.5,right=0.5,bottom=0.5), "lines")) +
+  theme_apa(base_size = 12)
 ```
 
-```{r Facetplots, echo=FALSE, dev='pdf', fig.height=8, fig.width=5, fig.align="center", fig.cap = "ERP waveforms and scalp distributions to acceptance and rejection feedback. A) Grand average ERP activity at Cz electrode; B-D: ERP activity at PCA components that significantly different between acceptance and rejection feedback, including B) RewP component: temporal factor (TF) 2 and spatial factor (SF) 1, C) P2 component: TF 4 and SF 1, and D) N1 component: TF 7 and SF 1. Scalp distributions represent the response to acceptance relative to rejection.", out.width='100%'}
+```{r Facetplots, echo=FALSE, dev='pdf', fig.height=8, fig.width=5, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback. A) Grand average ERP activity at Cz electrode; B-D: ERP activity at PCA components that significantly different between acceptance and rejection feedback, including B) RewP: temporal factor (TF) 2 and spatial factor (SF) 1 at electrode FC2, C) P2 component: TF 4 and SF 1 at electrode Cz, and D) N1 component: TF 7 and SF 1 at electrode Cz.", out.width='100%'}
 library(tiff)
 library(patchwork)
 
@@ -512,6 +455,8 @@ tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_pl
           common.legend = TRUE, legend = "bottom",
           ncol = 1, nrow = 4,
           align="v")
+tfsf.plots <- annotate_figure(tfsf.plots, left=text_grob("Average activity (µV)", color = "black", rot = 90))
+tfsf.plots
 
 tfsf.plots_scalps <- ggarrange(cz_ga_plot, NULL, NULL,
           tf2sf1_ga_plot, ACC_RewP_Scalp, REJ_RewP_Scalp,
@@ -526,9 +471,6 @@ tfsf.plots_scalps <- ggarrange(cz_ga_plot, NULL, NULL,
           common.legend = TRUE, legend = "bottom",
           ncol = 3, nrow = 4,
           align="v")
-
-tfsf.plots
-
 # tiff("../work/figures/Figure2.tiff", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 # png("../work/figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
@@ -541,38 +483,14 @@ node_ly <- matrix(c(-0.25, -0.25,
                -0.25, 0.25, 
                0, 0.25), ncol = 2, byrow = TRUE)
 
-
-
 #extracting the parameters from the sem model and selecting the interactions relevant for the semPaths (here, I need 12 estimates and p-values)
 table2<-parameterEstimates(fit_full_model,standardized=TRUE)  %>%  head(17)
 
 #turning the chosen parameters into text
 b<-gettextf('%.2f (%.2f)', table2$std.all, digits=table2$pvalue)
 
-full_model_plot <- semPaths(fit_full_model, 
-         intercepts=FALSE,
-         residual=TRUE,
-         style="mx",
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
-         edge.width=3,
-         curve=c(rep(0,8),-2,0,2,rep(0,9)),
-         edgeLabels=b,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.75,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-plot(full_model_plot)
-
-
-semPaths(fit_full_model, 
+# Plot the theoretical model without results
+theoretical_model_plot <- semPaths(fit_full_model, 
          style="mx",
          intercepts=FALSE,
          residual=TRUE,
@@ -585,7 +503,51 @@ semPaths(fit_full_model,
          layout = node_ly,
          shapeMan="rectangle",
          node.height=2,
-         node.width=2.75,
+         node.width=2.85,
+         label.scale=FALSE,
+         edge.label.cex = 1,
+         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+         optimizeLatRes=TRUE,
+         fade=FALSE,
+         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+
+# Plot the model results
+full_model_plot <- semPaths(fit_full_model, 
+         intercepts=FALSE,
+         residual=TRUE,
+         style="mx",
+         # color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+         # edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
+         edge.width=3,
+         curve=c(rep(0,8),-2,0,2,rep(0,9)),
+         edgeLabels=b,
+         whatLabels="std",
+         layout = node_ly,
+         shapeMan="rectangle",
+         node.height=2,
+         node.width=2.85,
+         label.scale=FALSE,
+         edge.label.cex = 1,
+         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+         optimizeLatRes=TRUE,
+         fade=FALSE,
+         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+
+# Plot the model results (color coordinated for presentation)
+full_model_plot_presentation <- semPaths(fit_full_model, 
+         intercepts=FALSE,
+         residual=TRUE,
+         style="mx",
+         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
+         edge.width=3,
+         curve=c(rep(0,8),-2,0,2,rep(0,9)),
+         edgeLabels=b,
+         whatLabels="std",
+         layout = node_ly,
+         shapeMan="rectangle",
+         node.height=2,
+         node.width=2.85,
          label.scale=FALSE,
          edge.label.cex = 1,
          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
@@ -593,49 +555,38 @@ semPaths(fit_full_model,
          fade=FALSE,
          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
 ```
-
-(ref:SEM-figure-caption) 
-```{r SEMplotprint, fig.cap = "SEM model of all hypotheses. Note: Values are beta coefficients (p values)", out.width='100%'}
+```{r SEMplotprint, fig.cap = "SEM model of all hypotheses.  Note: Values are beta coefficients (p values)", out.width='100%', warning=FALSE}
 plot(full_model_plot)
 ```
 
-```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "Relationship between RewP to social acceptance and income to needs ratio", out.width='100%'}
-ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
+```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "Relationship between RewP to social acceptance and income to needs ratio with histograms", out.width='100%'}
+library(ggExtra)
+
+I2N_rewp <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(method="lm") +
   labs(x="Income to needs ratio", y="RewP (residuals)") +
   theme_apa()
+
+I2N_rewp_marg <- ggMarginal(I2N_rewp, type="histogram", size=4)
+I2N_rewp_marg
 ```
 
-
-
-
-
-
-\newpage
-\newpage
-# Supplemental Materials
 ```{r PCA factors}
 pca_factors <- read.csv(here("../data/PCA_factors_full_corrected.csv"))
 ```
 ```{r PCA factors table, results="asis"}
 apa_table(pca_factors,
-          col.names=c("Temporospatial\\\\factor combination",
-                      "Unique variance\\\\explained",
-                      "Temporal loading\\\\peak (ms)",
+          col.names=c("Temporospatial \\\\ factor combination",
+                      "Unique variance explained",
+                      "Temporal loading peak (ms)",
                       "Peak electrode",
-                      "Accept vs Reject\\\\(t value)"),
+                      "Accept vs Reject t value)"),
           caption="Temporospatial factors that differed between social acceptance and rejection feedback",
           note="t values derived from robust ANOVA; TF = temporal factor; SF = spatial factor.",
           align=c('l',rep('c',4)),
-          escape=TRUE)
-
-
-# col.names=c("Temporosptial factor combination",
-#                       "Unique variance explained (%)",
-#                       "Temporal loading peak (ms)",
-#                       "Peak electrode",
-#                       "Accept vs Reject (t value)"),
+          escape=FALSE,
+          landscape=TRUE)
 ```
 
 ```{r With discriminability}
@@ -649,7 +600,7 @@ aim1_table_disc <- DISS_make_table(first_model=mr.rewp_pilt_disc, second_model=m
 ```{r}
 apa_table(aim1_table_disc,
           caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance covarying for accuracy",
-          col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+          col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)),
           escape=TRUE)
@@ -687,7 +638,7 @@ apa_table(
 
 apa_table(aim3_table_med,
           caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology covarying for recent psychotropic medication use",
-          col_spanners = list(` ` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
+          col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)))
 ```
@@ -697,13 +648,13 @@ mr.rb_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5c
 
 mr.la_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
 
-I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la_i2n_disc, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
+I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la_i2n_disc, predictors=c("Intercept", "Depression", "Social Anxiety", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"))
 ```
 
 ```{r}
 apa_table(I2N_table_disc,
           caption="Multiple regressions of behavioral reward bias and loss avoidance covarying for accuracy",
-          col_spanners = list(` ` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+          col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)),
           escape=TRUE)

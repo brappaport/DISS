@@ -54,10 +54,10 @@ In addition to an overall measure of reward bias and loss avoidance in each of t
 ## 1.5 Load Data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-PILTP_data <- read_excel("/Users/brentrappaport/Box Sync/WashU/Research/DISS/_rawdata/pilt_behavioral/T20/FP_all_T20.xlsx")
+PILTP_data <- read_excel("../_rawdata/pilt_behavioral/T20/FP_all_T20.xlsx")
 piltp_data <- PILTP_data; rm(PILTP_data)
 
-PILTN_data <- read_excel("/Users/brentrappaport/Box Sync/WashU/Research/DISS/_rawdata/pilt_behavioral/T20/FN_all_T20.xlsx")
+PILTN_data <- read_excel("../_rawdata/pilt_behavioral/T20/FN_all_T20.xlsx")
 piltn_data <- PILTN_data; rm(PILTN_data)
 ```
 
@@ -243,11 +243,11 @@ CLEAN_piltp_data <- piltp_data_RB1 %>%
   
   pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Reward_bias_20","Reward_bias_20_12quant","Reward_bias_20_123quant","Reward_bias_20_1234quant","PILTP_Disc_20"))
 
-CLEAN_piltp_data$Reward_bias_20 <- rowMeans(CLEAN_piltp_data[,c("Reward_bias_20_block1","Reward_bias_20_block2")])
-CLEAN_piltp_data$PILTP_Disc_20 <- rowMeans(CLEAN_piltp_data[,c("PILTP_Disc_20_block1","PILTP_Disc_20_block2")])
-
 # Make infinite values NA
-is.na(CLEAN_piltp_data) <- sapply(CLEAN_piltp_data, is.infinite)
+CLEAN_piltp_data[mapply(is.infinite, CLEAN_piltp_data)] <- NA
+#Calculate mean across blocks
+CLEAN_piltp_data$Reward_bias_20 <- rowMeans(CLEAN_piltp_data[,c("Reward_bias_20_block1","Reward_bias_20_block2")], na.rm=TRUE)
+CLEAN_piltp_data$PILTP_Disc_20 <- rowMeans(CLEAN_piltp_data[,c("PILTP_Disc_20_block1","PILTP_Disc_20_block2")], na.rm=TRUE)
 
 # Count number of subjects with data for each reward bias
 apply(CLEAN_piltp_data[,-1], 2, function(x) sum(!is.na(x)))
@@ -319,11 +319,11 @@ CLEAN_piltn_data <- piltn_data_RB1 %>%
   
   pivot_wider(id_cols="Subid", names_from="Block", values_from=c("Loss_bias_20","Loss_bias_20_12quant","Loss_bias_20_123quant","Loss_bias_20_1234quant","PILTN_Disc_20"))
 
-CLEAN_piltn_data$Loss_bias_20 <- rowMeans(CLEAN_piltn_data[,c("Loss_bias_20_block1","Loss_bias_20_block2")])
-CLEAN_piltn_data$PILTN_Disc_20 <- rowMeans(CLEAN_piltn_data[,c("PILTN_Disc_20_block1","PILTN_Disc_20_block2")])
-
 # Make infinite values NA
-is.na(CLEAN_piltn_data) <- sapply(CLEAN_piltn_data, is.infinite)
+CLEAN_piltn_data[mapply(is.infinite, CLEAN_piltn_data)] <- NA
+#Calculate mean across blocks
+CLEAN_piltn_data$Loss_bias_20 <- rowMeans(CLEAN_piltn_data[,c("Loss_bias_20_block1","Loss_bias_20_block2")], na.rm=TRUE)
+CLEAN_piltn_data$PILTN_Disc_20 <- rowMeans(CLEAN_piltn_data[,c("PILTN_Disc_20_block1","PILTN_Disc_20_block2")], na.rm=TRUE)
 
 # Count number of subjects with data for each measure
 apply(CLEAN_piltn_data[,-1], 2, function(x) sum(!is.na(x)))
@@ -349,4 +349,3 @@ sum(!is.na(DISS_cleaning05_pilt$Loss_bias_20))
 ```{r}
    renv::snapshot()   #Take a snapshot of environment
 ```
-

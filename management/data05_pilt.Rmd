@@ -197,10 +197,10 @@ piltp_data_cleaned$Block <- dplyr::recode(piltp_data_cleaned$Block, `1`="block1"
 piltp_data_RB1 <-piltp_data_cleaned %>%
   group_by(Subid,Block) %>%
             # For all quantiles
-  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1),
-            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0),
-            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1),
-            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0),
+  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1)+0.5,
+            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0)+0.5,
+            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1)+0.5,
+            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0)+0.5,
             N_trials = length(Mouth.RT),
             # For the first two quantiles
             Rich_Correct_20_12quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1 & 
@@ -273,10 +273,10 @@ piltn_data_cleaned$Block <- dplyr::recode(piltn_data_cleaned$Block, `1`="block1"
 piltn_data_RB1 <-piltn_data_cleaned %>%
   group_by(Subid,Block) %>%
             # For all quantiles
-  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0),
-            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1),
-            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0),
-            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1),
+  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0)+0.5,
+            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1)+0.5,
+            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0)+0.5,
+            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1)+0.5,
             N_trials = length(Mouth.RT),
             # For the first two quantiles
             Rich_Correct_20_12quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0 & 

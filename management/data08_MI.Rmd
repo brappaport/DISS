@@ -109,7 +109,6 @@ DISS_do01 <- DISS_do01_full %>%
     dplyr::select(c(Subid, all_of(all_measures_list), all_of(factors_list), paste0(factors_list,"_f")))
 ```
 
-
 # 3. Check for univariate & multivariate outliers (not including covariates)
 Do NOT include covariates, otherwise this leads to excuding the 3 Hispanic subjects
 ```{r Outliers}
@@ -130,10 +129,10 @@ DISS_do01_full_nooutliers <- DISS_do01_full %>%
 DISS_do01_nooutliers <- DISS_do01 %>%
     dplyr::slice(-rows_to_exclude)
 
-# Check that both datasets removed one participant
+# Check that both datasets removed same number of participants
 length(DISS_do01_full_nooutliers$Subid); length(DISS_do01_nooutliers$Subid)
 ```
-1 removed as multivariate outlier
+2 removed as multivariate outlier (as of 03/29/21)
 
 # 4. Missing data
 ```{r}
@@ -149,7 +148,7 @@ N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BD
 ```{r}
 TestMCARNormality(data=DISS_do01_nooutliers[,var_interest_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
 
-TestMCARNormality(data=DISS_do01_nooutliers[,all_measures_list_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
+# TestMCARNormality(data=DISS_do01_nooutliers[,all_measures_list_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
 ```
 The non-parametric test shows that there is not sufficient evidence to rejection MCAR asssumption, therefore data are assumed to be missing completely at random.
 

@@ -589,23 +589,6 @@ apa_table(pca_factors,
           landscape=TRUE)
 ```
 
-```{r With discriminability}
-mr.rewp_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-
-mr.fn_pilt_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-
-aim1_table_disc <- DISS_make_table(first_model=mr.rewp_pilt_disc, second_model=mr.fn_pilt_disc, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"))
-```
-
-```{r}
-apa_table(aim1_table_disc,
-          caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance covarying for accuracy",
-          col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
-          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-          align = c("l", rep("c", 6)),
-          escape=TRUE)
-```
-
 ```{r Psychotropic meds supplementary analysis}
 # Aim 1
 mr.rewp_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))

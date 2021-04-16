@@ -54,7 +54,13 @@ renv::restore()
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
     CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_01_27_21.sav")
-    crunch <- CRUNCH; rm(CRUNCH)
+    
+    SIAS_SPS <- expss::read_spss("../_rawdata/R01 PDS-III Imaging T20 SIAS-6 SPS-6 (1 6 20).sav")
+    sias_sps <- SIAS_SPS %>%
+      select("Subid", starts_with("T20sias"))
+    
+    crunch <- merge(CRUNCH, sias_sps, by="Subid")
+    rm(CRUNCH)
 ```
 
 # 2. Calculate variables
@@ -78,14 +84,13 @@ crunch$Income_to_Need <- ifelse(is.na(crunch$Income_to_Need), crunch$S1Income_to
 demog <- c("Subid","sex","T20age","ethin","PDSIII_Race","PDSIII_Race_other","PDSIII_Hispanic",
            "Income_to_Need",
            "S5psychmed","S5psychmed_dos")
-symptoms <- c("S5CDI2C_T","S5CDI2C_TT","S5CDI2P_T","S5CDI2P_TT","S5BDItotalscore",
-              "S5SIAS6_score","S5SPS6_score",
+symptoms <- c("S5SIAS6_score","S5SPS6_score",
               "S5BAS_C_drive","S5BAS_C_funseek2","S5BAS_C_reward_revised2","S5BIS_C_revised",
               "S5PSCtotal")
 cog_measures <- c("S5ListSort_AgeAdjustedSS","S5PatComp_AgeAdjustedSS","S5PictSeq_AgeAdjustedSS","S5PictVocab_AgeAdjustedSS","S5Flanker_AgeAdjustedSS")
 
 DISS_cleaning04_crunch <- crunch %>%
-  dplyr::select(demog, symptoms, cog_measures, matches('MDD|SOC'))
+  dplyr::select(all_of(demog), starts_with("S5CDI"),starts_with("S5BDI"),starts_with("T20sias"), symptoms, all_of(cog_measures), matches('MDD|SOC'))
 ```
 
 ## Detect missing data

@@ -13,7 +13,7 @@ toc: yes
 ---
 
 # About
-This script imports and cleans data from the MacArthur Health & Behavior Questionnaire to measure peer relations in the PDS sample. This is primarily or the analyses found in 'do_supplement.Rmd' which are a follow-up to Rappaport et al., 2019.
+This script imports and cleans data from the MacArthur Health & Behavior Questionnaire to measure peer relations in the PDS sample. This is primarily for the analyses found in 'do_supplement.Rmd' which are a follow-up to Rappaport et al., 2019.
 
 # 1. Get Setup
 ## 1.1. Clear everything & set width

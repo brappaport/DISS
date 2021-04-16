@@ -142,11 +142,10 @@ DISS_do01_nooutliers %>% #missing data for each variable
   dplyr::select(c(measures_list,paste0(factors_list[1:3],"_f"))) %>%
   miss_var_summary(order=FALSE)
 ```
-N=117 completed IG with reasonably clean data. 2 removed for IQ<70. 5 missing BDI/CDI measure (Subids: 100,101,121,199,584), 0 missing SIAS/SPS, 16 missing PILT, 9 missing DOS psychotropic medication use.
 
 ## 4.1. Test MCAR
 ```{r}
-TestMCARNormality(data=DISS_do01_nooutliers[,var_interest_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
+TestMCARNormality(data=DISS_do01_nooutliers[,c(var_interest_n)], imputation.number=10, imputation.method="Dist.Free", seed=314, del.lesscases=2)
 
 # TestMCARNormality(data=DISS_do01_nooutliers[,all_measures_list_n], imputation.number=10, imputation.method="Dist.Free", seed=314)
 ```

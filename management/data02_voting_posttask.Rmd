@@ -19,7 +19,7 @@ This script cleans the voting and post-task questionnaire data from the Island G
 ## 1.1. Clear everything & set width
 ```{r echo=TRUE, results='hide', message=FALSE}
     options(width=80) #Set width
-    #rm(list=ls())     #Remove everything from environment
+    rm(list=ls())     #Remove everything from environment
     cat("\014")       #Clear Console
 ```
 
@@ -45,7 +45,7 @@ This script cleans the voting and post-task questionnaire data from the Island G
 
 ## 1.4. Set seed
 ```{r}
-     set.seed(8675309)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5 Load Data

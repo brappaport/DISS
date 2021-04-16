@@ -280,35 +280,35 @@ piltn_data_RB1 <-piltn_data_cleaned %>%
             N_trials = length(Mouth.RT),
             # For the first two quantiles
             Rich_Correct_20_12quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[3,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[3,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Rich_Incorrect_20_12quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[3,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[3,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Correct_20_12quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[3,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[3,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Incorrect_20_12quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[3,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
-            N_trials_12quant = length(which(Mouth.RT <= piltp_quantile_list[3,1] & Mouth.RT > piltp_quantile_list[1,1])),
+                                         Mouth.RT <= piltn_quantile_list[3,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
+            N_trials_12quant = length(which(Mouth.RT <= piltn_quantile_list[3,1] & Mouth.RT > piltn_quantile_list[1,1])),
             # For the first three quantiles
             Rich_Correct_20_123quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Rich_Incorrect_20_123quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Correct_20_123quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Incorrect_20_123quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
-            N_trials_123quant = length(which(Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])),
+                                         Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
+            N_trials_123quant = length(which(Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])),
             
             # For the first four quantiles
             Rich_Correct_20_1234quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[5,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[5,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Rich_Incorrect_20_1234quant = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[5,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[5,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Correct_20_1234quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0 & 
-                                         Mouth.RT <= piltp_quantile_list[5,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
+                                         Mouth.RT <= piltn_quantile_list[5,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
             Lean_Incorrect_20_1234quant = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1 & 
-                                         Mouth.RT <= piltp_quantile_list[5,1] & Mouth.RT > piltp_quantile_list[1,1])+0.5,
-            N_trials_1234quant = length(which(Mouth.RT <= piltp_quantile_list[4,1] & Mouth.RT > piltp_quantile_list[1,1])))
+                                         Mouth.RT <= piltn_quantile_list[5,1] & Mouth.RT > piltn_quantile_list[1,1])+0.5,
+            N_trials_1234quant = length(which(Mouth.RT <= piltn_quantile_list[4,1] & Mouth.RT > piltn_quantile_list[1,1])))
 
 CLEAN_piltn_data <- piltn_data_RB1 %>%
   mutate(Loss_bias_20 = (log((Rich_Correct_20*Lean_Incorrect_20)/(Rich_Incorrect_20*Lean_Correct_20)))*.5,
@@ -331,7 +331,7 @@ apply(CLEAN_piltn_data[,-1], 2, function(x) sum(!is.na(x)))
 
 # 4. Merge data
 ```{r}
-DISS_cleaning05_pilt <- merge(CLEAN_piltp_data, CLEAN_piltn_data, by="Subid")
+DISS_cleaning05_pilt <- full_join(CLEAN_piltp_data, CLEAN_piltn_data, by="Subid")
 ```
 
 

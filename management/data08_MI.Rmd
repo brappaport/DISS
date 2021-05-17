@@ -120,6 +120,10 @@ data_p <- psych::outlier(DISS_do01[,var_interest_nocovar],plot = T,bad=10,na.rm=
 rows_to_exclude <- which(pchisq(data_p,df=6,ncp=0,lower.tail = F,log.p = F)<.001)
 paste0("Outlier Subid: ",rows_to_exclude)
 
+# Pare down dataset
+DISS_do01_full_outliers <- DISS_do01_full %>%
+  drop_na(rewp_r, T20age)
+
 # Remove multivariate outliers
 ## For full dataset
 DISS_do01_full_nooutliers <- DISS_do01_full %>%
@@ -223,6 +227,8 @@ for (m in measures_list){
 
 # 7. Save data
 ```{r}
+#save non-imputed full dataset w/ outliers
+save(DISS_do01_full_outliers, file="./data/DISS_do01_full_outliers.RData")
 #save non-imputed dataset w/ outliers
 save(DISS_do01, file="./data/DISS_do01.RData")
 #save non-imputed full dataset wo/ outliers

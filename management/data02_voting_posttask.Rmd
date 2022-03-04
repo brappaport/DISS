@@ -64,7 +64,9 @@ Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
 DISS_cleaning03_q$r <- as.integer(DISS_cleaning03_q$r) #make into an integer
 DISS_cleaning03_q <- DISS_cleaning03_q %>%
-  mutate(r_new = ifelse(qn<3, 6-r, r)) #reverse score appropriate items
+  mutate(r_temp  = ifelse(qn<3, 6-r, r)) %>% #reverse score appropriate items
+  mutate(r_new = ifelse(subscale=="self-esteem", ifelse(qn==3, 6-r, r_temp), r_temp)) %>% #fix self-esteem scale (since question number 4 is actually reverse coded, so instead for parismony we recode it as poor self-esteem and reverse code questions 1-3 instead)
+  mutate(subscale = recode(subscale, "self-esteem"="poor_self_esteem"))
 
 tapply(DISS_cleaning03_q$r_new, DISS_cleaning03_q$subscale, function(x) c(mean(x, na.rm=T), sd(x, na.rm=T))) #get the mean and sd for each dimension in the questionnaire
 

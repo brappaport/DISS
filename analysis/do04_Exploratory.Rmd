@@ -94,6 +94,7 @@ Remember to immediately rename and remove. Avoid overwriting old data.
       crunch <- CRUNCH; rm(CRUNCH)
       
       DISS_do04_exp <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(DISS_do04_full, DISS_do04_hbq, crunch))
+      DISS_do04_exp_crunch <- merge(DISS_do04_full, crunch,by="Subid")
 ```      
 
 # 2. Check the PILT is calculated similarly to past waves
@@ -275,9 +276,15 @@ Preoccupation with exclusion negatively related to RewP
 
 # 8. Income to needs
 ```{r}
+DISS_do04_exp_crunch
+
 summary(lm(rewp_r ~ Income_to_Need, DISS_do04)) #*
 summary(lm(fn_r ~ Income_to_Need, DISS_do04))
 summary(lm(p2_r ~ Income_to_Need, DISS_do04)) #*
+
+cor(DISS_do04_exp[,c("Income_to_Need","T1Income_to_Need")], use="complete.obs")
+summary(lm(rewp_r ~ T1Income_to_Need, DISS_do04_exp_crunch))
+summary(lm(Loss_bias_20 ~ T1Income_to_Need, DISS_do04_exp_crunch)) #*
 
 rewp_i2n <- lm(rewp_r ~ Income_to_Need + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp) #* #fdr*
 fn_i2n <- lm(fn_r ~ Income_to_Need + S5cdic_bdi_perc + S5_SIASSPS + T20age.x + sex.x + PDSIII_Race.x + PDSIII_Hispanic.x, DISS_do04_exp)

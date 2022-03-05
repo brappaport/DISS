@@ -36,6 +36,7 @@ In addition to an overall measure of reward bias and loss avoidance in each of t
   library(expss)      #labeling variables/values
   library(psych)      #used for statistical analyses
   library(ggplot2)    #creates plots
+  library(irr)        #ICC
   library(readxl)     #read excel files
   library(workflowr)  #helps with workflow
 ```
@@ -329,13 +330,44 @@ CLEAN_piltn_data$PILTN_Disc_20 <- rowMeans(CLEAN_piltn_data[,c("PILTN_Disc_20_bl
 apply(CLEAN_piltn_data[,-1], 2, function(x) sum(!is.na(x)))
 ```
 
-# 4. Merge data
+# 4. Split-half reliability
+```{r}
+splithalf_p <- piltp_data_cleaned %>%
+  mutate(ind = rep(c(1, 2),length.out = n())) %>%
+  group_by(Subid,ind) %>%
+  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0)+0.5,
+            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1)+0.5,
+            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0)+0.5,
+            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1)+0.5) %>%
+  pivot_wider(names_from=ind, values_from=(c("Rich_Correct_20","Rich_Incorrect_20","Lean_Correct_20","Lean_Incorrect_20"))) %>%
+  mutate(Reward_bias_20_1 = log((Rich_Correct_20_1*Lean_Incorrect_20_1)/(Rich_Incorrect_20_1*Lean_Correct_20_1))*.5,
+         Reward_bias_20_2 = log((Rich_Correct_20_2*Lean_Incorrect_20_2)/(Rich_Incorrect_20_2*Lean_Correct_20_2))*.5,)
+
+splithalf_n <- piltn_data_cleaned %>%
+  mutate(ind = rep(c(1, 2),length.out = n())) %>%
+  group_by(Subid,ind) %>%
+  summarise(Rich_Correct_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 0)+0.5,
+            Rich_Incorrect_20 = sum(CurrentTrialRCStatus == "RewardCondition" & CRESP == 1)+0.5,
+            Lean_Correct_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 0)+0.5,
+            Lean_Incorrect_20 = sum(CurrentTrialRCStatus == "NotRewardCondition" & CRESP == 1)+0.5) %>%
+  pivot_wider(names_from=ind, values_from=(c("Rich_Correct_20","Rich_Incorrect_20","Lean_Correct_20","Lean_Incorrect_20"))) %>%
+  mutate(Loss_bias_20_1 = log((Rich_Correct_20_1*Lean_Incorrect_20_1)/(Rich_Incorrect_20_1*Lean_Correct_20_1))*.5,
+         Loss_bias_20_2 = log((Rich_Correct_20_2*Lean_Incorrect_20_2)/(Rich_Incorrect_20_2*Lean_Correct_20_2))*.5,)
+
+library(CTT)
+icc_rewardbias <- irr::icc(splithalf_p[,c("Reward_bias_20_1", "Reward_bias_20_2")], model="oneway", unit="single", r0=0)
+icc_lossbias <- irr::icc(splithalf_n[,c("Loss_bias_20_1", "Loss_bias_20_2")], model="oneway", unit="single", r0=0)
+spearman.brown(as.numeric(icc_rewardbias[7]))
+spearman.brown(as.numeric(icc_lossbias[7]))
+```
+
+# 5. Merge data
 ```{r}
 DISS_cleaning05_pilt <- full_join(CLEAN_piltp_data, CLEAN_piltn_data, by="Subid")
 ```
 
 
-# 2 Save Data
+# 6. Save Data
 ```{r}
 save(DISS_cleaning05_pilt, file="./data/DISS_cleaning05_pilt.RData")
 
@@ -343,7 +375,7 @@ sum(!is.na(DISS_cleaning05_pilt$Reward_bias_20))
 sum(!is.na(DISS_cleaning05_pilt$Loss_bias_20))
 ```
 
-# 3 Closing out
+# 7. Closing out
   In this step, go ahead and close out of the file and quit R without saving  
   the work space.
 ```{r}

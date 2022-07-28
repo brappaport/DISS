@@ -52,9 +52,9 @@ toc: yes
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
       # Voting behavior and post-task questionnaire responses
-      load(file = "./data/DISS_cleaning03_vq.RData")   
-      DISS_cleaning07_beh <- DISS_cleaning03_vq  ## first create new data
-      rm("DISS_cleaning03_vq")             ## remove old data
+      load(file = "./data/DISS_cleaning04_vq.RData")   
+      DISS_cleaning07_beh <- DISS_cleaning04_vq  ## first create new data
+      rm("DISS_cleaning04_vq")             ## remove old data
       
       # Symptom measures
       load(file = "./data/DISS_cleaning04_crunch.RData")   

@@ -36,6 +36,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
   library(MASS)       #runs robust linear models
   library(sfsmisc)    #run robust F-test for linear models
   library(MissMech)   #test of MCAR
+#To install from archive: install.packages("https://cran.r-project.org/src/contrib/Archive/MissMech/MissMech_1.0.2.tar.gz", repos=NULL, type="source")
   library(naniar)     #handle missingness
   library(mice)       #multiple imputation
   library(miceadds)   #adding functions to mice

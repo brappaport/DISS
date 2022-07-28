@@ -67,24 +67,24 @@ data_hbq <- read.csv("../../CRUNCH/-HBQ/HBQ_dataset.csv")
 
 data_hbq$Subid <- as.integer(data_hbq$Subid)
 
-data_hbq_t1$Subid <- as.integer(data_hbq_t1$Subid)
-data_hbq_t3$Subid <- as.integer(data_hbq_t3$Subid)
-data_hbq_t5$Subid <- as.integer(data_hbq_t5$Subid)
-data_hbq_t7$Subid <- as.integer(data_hbq_t6$Subid)
-data_hbq_t8$Subid <- as.integer(data_hbq_t8$Subid)
-data_hbq_t10$Subid <- as.integer(data_hbq_t10$Subid)
-data_hbq_t12$Subid <- as.integer(data_hbq_t12$Subid)
-data_hbq_t14$Subid <- as.integer(data_hbq_t14$Subid)
-data_hbq_t18$Subid <- as.integer(data_hbq_t18$Subid)
+# data_hbq_t1$Subid <- as.integer(data_hbq_t1$Subid)
+# data_hbq_t3$Subid <- as.integer(data_hbq_t3$Subid)
+# data_hbq_t5$Subid <- as.integer(data_hbq_t5$Subid)
+# data_hbq_t7$Subid <- as.integer(data_hbq_t6$Subid)
+# data_hbq_t8$Subid <- as.integer(data_hbq_t8$Subid)
+# data_hbq_t10$Subid <- as.integer(data_hbq_t10$Subid)
+# data_hbq_t12$Subid <- as.integer(data_hbq_t12$Subid)
+# data_hbq_t14$Subid <- as.integer(data_hbq_t14$Subid)
+# data_hbq_t18$Subid <- as.integer(data_hbq_t18$Subid)
 
-for (m in c(1,3,5,6,8,10,12,14,18)) {
-  eval(parse(text=paste0("data_hbq_t",m,"$Subid <- as.integer(data_hbq_t",m,"$Subid)")))
-}
+# for (m in c(1,3,5,6,8,10,12,14,18)) {
+  # eval(parse(text=paste0("data_hbq_t",m,"$Subid <- as.integer(data_hbq_t",m,"$Subid)")))
+# }
 
 DISS_cleaning04_hbq <- data_hbq
 
-DISS_cleaning04_hbq <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18))
-rm(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18)
+# DISS_cleaning04_hbq <- Reduce(function(x,y) merge(x,y,by="Subid",all=TRUE),list(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18))
+# rm(data_hbq_t1,data_hbq_t3,data_hbq_t5,data_hbq_t18)
 ```
 
 ```{r}

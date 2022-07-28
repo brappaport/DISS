@@ -62,24 +62,28 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 ## 1.5. Load data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-      load(file = "../work/data/DISS_do01_full.RData")   
-      DISS_do04_full_nooutliers <- DISS_do01_full_nooutliers
+      load(file = "data/DISS_do01_full_outliers.RData")   
+      DISS_do02_full <- DISS_do01_full_outliers
+      rm("DISS_do01_full_outliers")
+
+      load(file = "data/DISS_do01_full.RData")   
+      DISS_do02_full_nooutliers <- DISS_do01_full_nooutliers
       rm("DISS_do01_full_nooutliers")
 
-      load(file = "../work/data/DISS_do01_nooutliers.RData")       
-      DISS_do04_nooutliers <- DISS_do01_nooutliers
+      load(file = "data/DISS_do01_nooutliers.RData")       
+      DISS_do02_nooutliers <- DISS_do01_nooutliers
       rm("DISS_do01_nooutliers")
       
-      load(file = "../work/data/DISS_do01.RData")   
-      DISS_do04 <- DISS_do01
+      load(file = "data/DISS_do01.RData")   
+      DISS_do02 <- DISS_do01
       rm("DISS_do01")
       
-      load(file = "../work/data/DISS_do01.imp.RData")
-      DISS_do04.imp <- DISS_do01.imp
+      load(file = "data/DISS_do01.imp.RData")
+      DISS_do02.imp <- DISS_do01.imp
       rm("DISS_do01.imp")
       
-      load(file = "../work/data/DISS_do01.imp_z.RData")
-      DISS_do04.imp_z <- DISS_do01.imp_z
+      load(file = "data/DISS_do01.imp_z.RData")
+      DISS_do02.imp_z <- DISS_do01.imp_z
       rm("DISS_do01.imp_z")
       
       load(file = "./data/DISS_cleaning07.RData")
@@ -232,6 +236,7 @@ for (m in c("S4BPFSC_NR","S4BPFSC_T","S5BPFSC_NR","S5BPFSC_T","S5BPFSC_SH")){
 ```
 
 # 6. Voting behavior
+## 6.1 Subject voting aggregate
 ```{r}
 summary(lm(Keep_prop ~ S5cdic_bdi_perc, DISS_do04))
 summary(lm(Keep_prop ~ S5_SIASSPS, DISS_do04))
@@ -248,6 +253,17 @@ summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
 
 ## Peer relations
 summary(lm(Keep_prop~T18hbqhPS, DISS_do04))
+```
+
+## 6.2 Subject voting to keep coplayers that just voting to keep them in the prior round
+```{r}
+summary(lm(Keep_prop_pr ~ rewp_r, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ rewp_ACC, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ rewp_REJ, DISS_do02_full_nooutliers))
+
+summary(lm(Keep_prop_pr ~ fn_r, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ p2_r, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ n1_r, DISS_do02_full_nooutliers))
 ```
 
 #7. Extension of Frontiers paper with peer victimization)

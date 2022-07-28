@@ -65,8 +65,9 @@ Remember to immediately rename and remove. Avoid overwriting old data.
 DISS_cleaning03_q$r <- as.integer(DISS_cleaning03_q$r) #make into an integer
 DISS_cleaning03_q <- DISS_cleaning03_q %>%
   mutate(r_temp  = ifelse(qn<3, 6-r, r)) %>% #reverse score appropriate items
-  mutate(r_new = ifelse(subscale=="self-esteem", ifelse(qn==3, 6-r, r_temp), r_temp)) %>% #fix self-esteem scale (since question number 4 is actually reverse coded, so instead for parismony we recode it as poor self-esteem and reverse code questions 1-3 instead)
-  mutate(subscale = recode(subscale, "self-esteem"="poor_self_esteem"))
+  mutate(r_new = ifelse(subscale=="self-esteem", ifelse(qn==3, 6-r, r_temp), r_temp)) #fix self-esteem scale (since question number 4 is actually reverse coded, so instead for parsimony we recode it as poor self-esteem and reverse code questions 1-3 instead)
+
+DISS_cleaning03_q$subscale <- dplyr::recode(DISS_cleaning03_q$subscale, "self-esteem"="poor_self_esteem")
 
 tapply(DISS_cleaning03_q$r_new, DISS_cleaning03_q$subscale, function(x) c(mean(x, na.rm=T), sd(x, na.rm=T))) #get the mean and sd for each dimension in the questionnaire
 
@@ -76,10 +77,60 @@ names(DISS_cleaning03_q) <- gsub(" ", "_", names(DISS_cleaning03_q))
 names(DISS_cleaning03_q) <- gsub("-", "_", names(DISS_cleaning03_q))
 ```
 
-## 1.7 Aggregate voting responses (Keep/Stay, Kick out)
+## 1.7 Generate column of coplayer votes
 ```{r}
-DISS_cleaning03_v$Subid <- as.integer(DISS_cleaning03_v$s)
-DISS_cleaning03_v2 <- DISS_cleaning03_v %>%
+# 0 is Kick, 1 is Keep
+
+DISS_cleaning04_v <- DISS_cleaning03_v %>%
+  mutate(coplayer_priorvote = 
+           case_when(round == 2 & grepl('xpendable_a',coplayer) ~ "Keep",
+                     round == 3 & grepl('xpendable_a',coplayer) ~ "Kick",
+                     round == 4 & grepl('xpendable_a',coplayer) ~ "Keep",
+                     round == 5 & grepl('xpendable_a',coplayer) ~ "Kick",
+                     round == 6 & grepl('xpendable_a',coplayer) ~ "Keep",
+                     
+                     round == 2 & grepl('xpendable_r',coplayer) ~ "Kick",
+                     round == 3 & grepl('xpendable_r',coplayer) ~ "Keep",
+                     round == 4 & grepl('xpendable_r',coplayer) ~ "Kick",
+                     round == 5 & grepl('xpendable_r',coplayer) ~ "Keep",
+                     round == 6 & grepl('xpendable_r',coplayer) ~ "Kick",
+                     
+                     round == 2 & coplayer=='a1' ~ "Kick",
+                     round == 3 & coplayer=='a1' ~ "Kick",
+                     round == 4 & coplayer=='a1' ~ "Kick",
+                     round == 5 & coplayer=='a1' ~ "Keep",
+                     round == 6 & coplayer=='a1' ~ "Kick",
+                     
+                     round == 2 & coplayer=='a2' ~ "Keep",
+                     round == 3 & coplayer=='a2' ~ "Kick",
+                     round == 4 & coplayer=='a2' ~ "Keep",
+                     round == 5 & coplayer=='a2' ~ "Kick",
+                     round == 6 & coplayer=='a2' ~ "Kick",
+                     
+                     round == 2 & coplayer=='a3' ~ "Kick",
+                     round == 3 & coplayer=='a3' ~ "Keep",
+                     round == 4 & coplayer=='a3' ~ "Keep",
+                     round == 5 & coplayer=='a3' ~ "Kick",
+                     round == 6 & coplayer=='a3' ~ "Kick",
+                     
+                     round == 2 & coplayer=='a4' ~ "Keep",
+                     round == 3 & coplayer=='a4' ~ "Kick",
+                     round == 4 & coplayer=='a4' ~ "Kick",
+                     round == 5 & coplayer=='a4' ~ "Keep",
+                     round == 6 & coplayer=='a4' ~ "Keep",
+                     
+                     round == 2 & coplayer=='a5' ~ "Keep",
+                     round == 3 & coplayer=='a5' ~ "Keep",
+                     round == 4 & coplayer=='a5' ~ "Kick",
+                     round == 5 & coplayer=='a5' ~ "Keep",
+                     round == 6 & coplayer=='a5' ~ "Keep"
+                     ))
+```
+
+## 1.8 Aggregate voting responses (Keep/Stay, Kick out)
+```{r}
+DISS_cleaning04_v$Subid <- as.integer(DISS_cleaning04_v$s)
+DISS_cleaning04_v2 <- DISS_cleaning04_v %>%
   group_by(Subid) %>%
   count(vote=="Kick") %>%
   spread(`vote == "Kick"`, n) %>%
@@ -88,12 +139,23 @@ DISS_cleaning03_v2 <- DISS_cleaning03_v %>%
   mutate(Keep_prop = Keep/51,
          Kick_prop = Kick/51)
 
-DISS_cleaning03_vq <- Reduce(function(x,y) merge(x,y,by="Subid",all=FALSE), list(DISS_cleaning03_q, DISS_cleaning03_v2)) #merge the two datasets
+# Calculate the proportion of Keep votes cast when that coplayer had voted to keep the subject in the prior round (suggested by Autumn)
+DISS_cleaning04_v3 <- DISS_cleaning04_v %>%
+  filter(coplayer_priorvote == "Keep") %>%
+  group_by(Subid) %>%
+  count(vote=="Kick") %>%
+  spread(`vote == "Kick"`, n) %>%
+  rename(Kick = "TRUE",
+         Keep = "FALSE") %>%
+  mutate(Keep_prop_pr = Keep/51) %>%
+  select(Subid,Keep_prop_pr)
+
+DISS_cleaning04_vq <- Reduce(function(x,y) merge(x,y,by="Subid",all=FALSE), list(DISS_cleaning03_q, DISS_cleaning04_v2, DISS_cleaning04_v3)) #merge the two datasets
 ```
 
 # 2 Save data
 ```{r}
-save(DISS_cleaning03_vq, file="./data/DISS_cleaning03_vq.RData")
+save(DISS_cleaning04_vq, file="./data/DISS_cleaning04_vq.RData")
 ```
 
 # 3 Closing out

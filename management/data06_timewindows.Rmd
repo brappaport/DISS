@@ -36,7 +36,6 @@ Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer and time wi
   library(MASS)       #to residualize ERP scores with stdres
   library(psych)      #used for statistical analyses
   library(ggplot2)    #creates plots
-  library(pERPred)    #package for pERP reduction analyses
   library(tidyverse)  #plotting/cleaning, etc.
   library(workflowr)  #helps with workflow
 ```
@@ -49,7 +48,7 @@ Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer and time wi
 ## 1.4. Set seed
    Remember to set your seed AFTER you load libraries
 ```{r}
-     set.seed(8675309)    #Set seed
+     set.seed(314)    #Set seed
 ```
 
 ## 1.5 Load Data

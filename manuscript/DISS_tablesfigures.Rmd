@@ -2,23 +2,6 @@
 title             : "Behavioral, neural, and psychiatric correlates of social feedback"
 shorttitle        : "Correlates of social feedback"
 
-author: 
-  - name          : "Brent I. Rappaport"
-    affiliation   : "1"
-    corresponding : yes    # Define only one corresponding author
-    address       : "One Brookings Drive St. Louis, MO 63130"
-    email         : "brappaport@wustl.edu"
-
-affiliation:
-  - id            : "1"
-    institution   : "Psychological & Brain Science, Washington University in St. Louis"
-    
-
-authornote: |
-  1 Psychological & Brain Science, Washington University in St. Louis, St. Louis, MO  
-
-bibliography      : ["DISS-library.bib"]
-
 figsintext        : yes
 floatsintext      : yes
 figurelist        : no
@@ -53,6 +36,7 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE)
   library(miceadds)   #adding functions to mice
   library(tidyverse)  #plotting/cleaning, etc.
   library(ggpubr)     #make nice graphs
+  # library(rempsyc)    #write tables to docx
   library(scipub)
   library(workflowr)  #helps with workflow
 ```
@@ -125,9 +109,9 @@ apa_table(as.data.frame(demo_table$table),
 
 
 ```{r Zero-order correlations, include=FALSE}
-zero_order_cor <- micombine.cor(DISS_do02.imp_z, variables=c("rewp_r_z","fn_r_z",
-                                          "Reward_bias_20_z","Loss_bias_20_z",
-                                          "S5cdic_bdi_perc_z","S5_SIASSPS_z"), 
+zero_order_cor <- micombine.cor(DISS_do02.imp, variables=c("rewp_r","fn_r",
+                                          "Reward_bias_20","Loss_bias_20",
+                                          "S5cdic_bdi_perc","S5_SIASSPS"), 
               conf.level=0.95, method="pearson", nested=FALSE, partial=NULL) %>%
   mutate_if(is.numeric, round, 3)
 
@@ -173,6 +157,8 @@ zero_order_matrix_full[is.na(zero_order_matrix_full)] <- "—"
 apa_table(zero_order_matrix_full, 
           landscape = TRUE, 
           caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while relative standard errors (rse) are presented in the lower diagonal")
+
+write.csv(zero_order_matrix_full, "../tables/Table2_correlations.csv")
 ```
 
 ```{r DISS_make_table, include=FALSE}
@@ -284,8 +270,8 @@ S5cdic_bdi_perc ~~ S5_SIASSPS
 #Define hypothesized regressions
 
 #Aim 1
-rewp_r ~ Reward_bias_20
-fn_r ~ Loss_bias_20
+Reward_bias_20 ~ rewp_r
+Loss_bias_20 ~ fn_r
 
 #Aim 2
 rewp_r ~ S5cdic_bdi_perc
@@ -304,7 +290,6 @@ lavTestLRT(fit_simple_model, fit_full_model)
 
 fitm_simple <- fitmeasures(fit_simple_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
 fitm_full <- fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
-
 
 # Reward_bias_20 ~~ Reward_bias_20
 # Loss_bias_20 ~~ Loss_bias_20
@@ -470,7 +455,7 @@ tfsf.plots_scalps <- ggarrange(cz_ga_plot, NULL, NULL,
           ncol = 3, nrow = 4,
           align="v")
 # tiff("../work/figures/Figure2.tiff", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
-# png("../work/figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
+png("../figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
 
 ```{r SEMplot1, include=FALSE}
@@ -488,26 +473,26 @@ table2<-parameterEstimates(fit_full_model,standardized=TRUE)  %>%  head(17)
 b<-gettextf('%.2f (%.2f)', table2$std.all, digits=table2$pvalue)
 
 # Simple model plot
-simple_model_plot <- semPaths(fit_simple_model, 
-         style="mx",
-         intercepts=FALSE,
-         residual=TRUE,
-         curve=c(rep(0,8),-2,0,2,rep(0,9)),
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color='black',
-         edgeLabels=NULL,
-         edge.width=3,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=0.5,
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+# simple_model_plot <- semPaths(fit_simple_model, 
+#          style="mx",
+#          intercepts=FALSE,
+#          residual=TRUE,
+#          curve=c(rep(0,8),-2,0,2,rep(0,9)),
+#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+#          edge.color='black',
+#          edgeLabels=NULL,
+#          edge.width=3,
+#          whatLabels="std",
+#          layout = node_ly,
+#          shapeMan="rectangle",
+#          node.height=2,
+#          node.width=2.85,
+#          label.scale=FALSE,
+#          edge.label.cex = 1,
+#          edge.label.position=0.5,
+#          optimizeLatRes=TRUE,
+#          fade=FALSE,
+#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
 
 # Plot the theoretical model without results
 theoretical_model_plot <- semPaths(fit_full_model, 
@@ -560,27 +545,27 @@ fit_aim1_model <- sem(aim1_model, data=NULL, missing="FIML", estimator="MLR")
 
 mycol <- adjustcolor("white", alpha.f=0)
 
-aim1_plot <- semPaths(fit_aim1_model, 
-         style="mx",
-         intercepts=FALSE,
-         residual=TRUE,
-         curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep('dark green',2), rep(mycol,3), rep(mycol,3), rep('black',6)),
-         edgeLabels=NULL,
-         edge.width=3,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-png(here('../figures/aim1_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim1_plot); dev.off()
+# aim1_plot <- semPaths(fit_aim1_model, 
+#          style="mx",
+#          intercepts=FALSE,
+#          residual=TRUE,
+#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
+#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+#          edge.color=c(rep('black',3), rep('dark green',2), rep(mycol,3), rep(mycol,3), rep('black',6)),
+#          edgeLabels=NULL,
+#          edge.width=3,
+#          whatLabels="std",
+#          layout = node_ly,
+#          shapeMan="rectangle",
+#          node.height=2,
+#          node.width=2.85,
+#          label.scale=FALSE,
+#          edge.label.cex = 1,
+#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+#          optimizeLatRes=TRUE,
+#          fade=FALSE,
+#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+# png(here('figures/aim1_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim1_plot); dev.off()
 
 #Aim 2
 aim2_model <- '
@@ -608,27 +593,27 @@ Loss_bias_20 ~ 0*S5_SIASSPS
 
 fit_aim2_model <- sem(aim2_model, data=NULL, missing="FIML", estimator="MLR")
 
-aim2_plot <- semPaths(fit_aim2_model, 
-         style="mx",
-         intercepts=FALSE,
-         residual=TRUE,
-         curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep(mycol,2), rep(mycol,3), rep('blue',3), rep('black',6)),
-         edgeLabels=NULL,
-         edge.width=3,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-png(here('../figures/aim2_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim2_plot); dev.off()
+# aim2_plot <- semPaths(fit_aim2_model, 
+#          style="mx",
+#          intercepts=FALSE,
+#          residual=TRUE,
+#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
+#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+#          edge.color=c(rep('black',3), rep(mycol,2), rep(mycol,3), rep('blue',3), rep('black',6)),
+#          edgeLabels=NULL,
+#          edge.width=3,
+#          whatLabels="std",
+#          layout = node_ly,
+#          shapeMan="rectangle",
+#          node.height=2,
+#          node.width=2.85,
+#          label.scale=FALSE,
+#          edge.label.cex = 1,
+#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+#          optimizeLatRes=TRUE,
+#          fade=FALSE,
+#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+# png(here('figures/aim2_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim2_plot); dev.off()
 
 #Aim 3
 aim3_model <- '
@@ -656,27 +641,27 @@ Loss_bias_20 ~ S5_SIASSPS
 
 fit_aim3_model <- sem(aim3_model, data=DISS_do02_nooutliers, missing="FIML", estimator="MLR")
 
-aim3_plot <- semPaths(fit_aim3_model, 
-         style="mx",
-         intercepts=FALSE,
-         residual=TRUE,
-         curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep(mycol,2), rep('red',3), rep(mycol,3), rep('black',6)),
-         edgeLabels=NULL,
-         edge.width=3,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-png(here('../figures/aim3_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim3_plot); dev.off()
+# aim3_plot <- semPaths(fit_aim3_model, 
+#          style="mx",
+#          intercepts=FALSE,
+#          residual=TRUE,
+#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
+#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
+#          edge.color=c(rep('black',3), rep(mycol,2), rep('red',3), rep(mycol,3), rep('black',6)),
+#          edgeLabels=NULL,
+#          edge.width=3,
+#          whatLabels="std",
+#          layout = node_ly,
+#          shapeMan="rectangle",
+#          node.height=2,
+#          node.width=2.85,
+#          label.scale=FALSE,
+#          edge.label.cex = 1,
+#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
+#          optimizeLatRes=TRUE,
+#          fade=FALSE,
+#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
+# png(here('figures/aim3_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim3_plot); dev.off()
      
 # Plot the model results
 full_model_plot <- semPaths(fit_full_model, 
@@ -721,7 +706,7 @@ full_model_plot_presentation <- semPaths(fit_full_model,
          optimizeLatRes=TRUE,
          fade=FALSE,
          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-png(here('../figures/full_model_plot_presentation.png'),width = 10, height = 7, units="in", res=300); plot(full_model_plot_presentation); dev.off()
+png(here('figures/full_model_plot'),width = 10, height = 7, units="in", res=300); plot(full_model_plot); dev.off()
 ```
 ```{r SEMplotprint, fig.cap = "SEM model of all hypotheses.  Note: Values are beta coefficients (p values)", out.width='100%', warning=FALSE}
 plot(full_model_plot)
@@ -736,7 +721,7 @@ dep_rewp <- ggplot(DISS_do02_nooutliers, aes(x=S5cdic_bdi_perc, y=rewp_r)) +
   labs(x="Depression severity", y="RewP (residuals)") +
   theme_apa(base_size = 20)
 dep_rewp_marg <- ggMarginal(dep_rewp, type="histogram", size=5)
-png(here('../figures/rewp_dep_plot.png'),width = 9, height = 7, units="in", res=300); plot(dep_rewp_marg); dev.off()
+png(here('figures/rewp_dep_plot.png'),width = 9, height = 7, units="in", res=300); plot(dep_rewp_marg); dev.off()
 
 I2N_rewp <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
@@ -746,7 +731,7 @@ I2N_rewp <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
 
 I2N_rewp_marg <- ggMarginal(I2N_rewp, type="histogram", size=5)
 I2N_rewp_marg
-png(here('../figures/rewp_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_rewp_marg); dev.off()
+png(here('figures/rewp_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_rewp_marg); dev.off()
 
 I2N_loss <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Loss_bias_20)) +
   geom_point() +
@@ -756,7 +741,7 @@ I2N_loss <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Loss_bias_20)) 
 
 I2N_loss_marg <- ggMarginal(I2N_loss, type="histogram", size=5)
 I2N_loss_marg
-png(here('../figures/loss_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_loss_marg); dev.off()
+png(here('figures/loss_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_loss_marg); dev.off()
 
 I2N_reward <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Reward_bias_20)) +
   geom_point() +
@@ -765,11 +750,11 @@ I2N_reward <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Reward_bias_2
   theme_apa(base_size = 20)
 
 I2N_reward_marg <- ggMarginal(I2N_reward, type="histogram", size=5)
-png(here('../figures/reward_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_reward_marg); dev.off()
+png(here('figures/reward_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_reward_marg); dev.off()
 ```
 
 ```{r PCA factors}
-pca_factors <- read.csv(here("../data/PCA_factors_full_corrected.csv"))
+pca_factors <- read.csv(here("data/PCA_factors_full_corrected.csv"))
 ```
 ```{r PCA factors table, results="asis"}
 apa_table(pca_factors,
@@ -866,12 +851,12 @@ apa_table(
 mr.rewp_ci_norace <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 mr.rewp_norace <- DISS_make_table(first_model = mr.rewp_ci_norace, second_model = mr.rewp_ci_norace, predictors=c("Intercept", "Depression", "Social Anxiety", "Reward bias", "Loss avoidance", "Age", "Sex", "Hispanic", "SES"), round_digits = 2)
 
-write.csv(mr.rewp_norace, here("../../-presentations/SANS_2021/ses_rewp_table.csv"))
+write.csv(mr.rewp_norace, here("../-presentations/SANS_2021/ses_rewp_table.csv"))
 
 mr.pilt_ci_norace <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + Reward_bias_20_z + T20age_z + sex_f + PDSIII_Hispanic_f + Income_to_Need_z)))
 mr.pilt_norace <- DISS_make_table(first_model = mr.pilt_ci_norace, second_model = mr.pilt_ci_norace, predictors=c("Intercept", "Depression", "Social Anxiety", "Reward bias", "Age", "Sex", "Hispanic", "SES"), round_digits = 2)
 
-write.csv(mr.pilt_norace, here("../../-presentations/SANS_2021/ses_pilt_table.csv"))
+write.csv(mr.pilt_norace, here("../-presentations/SANS_2021/ses_pilt_table.csv"))
 
 
 cz_ga_plot_short <- cz_ga_plot +
@@ -893,6 +878,6 @@ tfsf.plots_short <- ggarrange(cz_ga_plot_short, tf2sf1_ga_plot_short,
           ncol = 2, nrow = 1,
           align="v")
 
-png(here("../../-presentations/SANS_2021/ERP_for_poster1.png"), width = 20, height = 8, units="in", res=300); tfsf.plots_short; dev.off()
+png(here("../-presentations/SANS_2021/ERP_for_poster1.png"), width = 20, height = 8, units="in", res=300); tfsf.plots_short; dev.off()
 ```
 

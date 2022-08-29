@@ -129,7 +129,7 @@ DISS_cleaning_tw_components_wide$n1_r <- -1*stdres(lm(n1_REJ ~ n1_ACC, DISS_clea
 DISS_cleaning06_tw <- DISS_cleaning_tw_components_wide
 ```
 
-# 4. Clean significant PCA compoents
+# 4. Clean significant PCA components
 ```{r}
 electrodes <- c('Fp1', 'Fz', 'F3', 'F7', 'FT9', 'FC5', 'FC1', 'C3', 'T7', 'TP9', 'CP5','CP1', 'Pz', 'P3', 'P7', 'O1', 'Oz', 'O2', 'P4', 'P8', 'TP10', 'CP6', 'CP2', 'C4', 'T8', 'FT10', 'FC6', 'FC2', 'F4', 'F8', 'Fp2', 'Cz')
 

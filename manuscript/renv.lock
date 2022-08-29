@@ -4,7 +4,7 @@
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://cloud.r-project.org"
+        "URL": "https://cran.rstudio.com"
       }
     ]
   },
@@ -735,6 +735,13 @@
       "Repository": "CRAN",
       "Hash": "07a91f99e56951818ab911366db77700"
     },
+    "ggExtra": {
+      "Package": "ggExtra",
+      "Version": "0.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e1651e764e09a4ff25ff978e33f1d6fa"
+    },
     "ggforce": {
       "Package": "ggforce",
       "Version": "0.3.2",
@@ -839,6 +846,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "7d7f283939f563670a697165b2cf5560"
+    },
+    "gsl": {
+      "Package": "gsl",
+      "Version": "2.1-6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cd08a36fbe64bf9b4a126b5d66e33db2"
     },
     "gtable": {
       "Package": "gtable",
@@ -1141,6 +1155,13 @@
       "Repository": "CRAN",
       "Hash": "67101e7448dfd9add4ac418623060262"
     },
+    "metacor": {
+      "Package": "metacor",
+      "Version": "1.0-2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b20d9ce2a55a6e9d34d3f3d226771eca"
+    },
     "mgcv": {
       "Package": "mgcv",
       "Version": "1.8-33",
@@ -1321,6 +1342,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "2f841d7915986a8fd995ab4ec105dd1b"
+    },
+    "patchwork": {
+      "Package": "patchwork",
+      "Version": "1.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c446b30cb33ec125ff02588b60660ccb"
     },
     "pbapply": {
       "Package": "pbapply",
@@ -1580,6 +1608,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "d2e1277195d221e6118d8a77dda2e877"
+    },
+    "rmeta": {
+      "Package": "rmeta",
+      "Version": "3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cf0ac2da08545dbb2b786b858e7e4799"
     },
     "rngtools": {
       "Package": "rngtools",
@@ -1853,6 +1888,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "bd51be662f359fa99021f3d51e911490"
+    },
+    "tiff": {
+      "Package": "tiff",
+      "Version": "0.1-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "4dfb11743389c80ded0d90327983cef7"
     },
     "tinylabels": {
       "Package": "tinylabels",

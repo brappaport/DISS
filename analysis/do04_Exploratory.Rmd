@@ -238,14 +238,14 @@ for (m in c("S4BPFSC_NR","S4BPFSC_T","S5BPFSC_NR","S5BPFSC_T","S5BPFSC_SH")){
 # 6. Voting behavior
 ## 6.1 Subject voting aggregate
 ```{r}
-summary(lm(Keep_prop ~ S5cdic_bdi_perc, DISS_do04))
-summary(lm(Keep_prop ~ S5_SIASSPS, DISS_do04))
+summary(lm(Keep_prop ~ S5cdic_bdi_perc, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop ~ S5_SIASSPS, DISS_do02_full_nooutliers))
 
-summary(lm(Keep_prop ~ Reward_bias_20, DISS_do04))
-summary(lm(Keep_prop ~ Loss_bias_20, DISS_do04))
+summary(lm(Keep_prop ~ Reward_bias_20, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop ~ Loss_bias_20, DISS_do02_full_nooutliers))
 
-summary(lm(Keep_prop ~ rewp_r, DISS_do04))
-summary(lm(Keep_prop ~ fn_r, DISS_do04))
+summary(lm(Keep_prop ~ rewp_r, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop ~ fn_r, DISS_do02_full_nooutliers))
 summary(lm(Keep_prop ~ p2_r, DISS_do04))
 summary(lm(Keep_prop ~ n1_r, DISS_do04))
 
@@ -255,7 +255,7 @@ summary(lm(Keep_prop ~ Income_to_Need, DISS_do04))
 summary(lm(Keep_prop~T18hbqhPS, DISS_do04))
 ```
 
-## 6.2 Subject voting to keep coplayers that just voting to keep them in the prior round
+## 6.2 Subject voting to keep coplayers that just voted to keep them in the prior round
 ```{r}
 summary(lm(Keep_prop_pr ~ rewp_r, DISS_do02_full_nooutliers))
 summary(lm(Keep_prop_pr ~ rewp_ACC, DISS_do02_full_nooutliers))
@@ -264,6 +264,12 @@ summary(lm(Keep_prop_pr ~ rewp_REJ, DISS_do02_full_nooutliers))
 summary(lm(Keep_prop_pr ~ fn_r, DISS_do02_full_nooutliers))
 summary(lm(Keep_prop_pr ~ p2_r, DISS_do02_full_nooutliers))
 summary(lm(Keep_prop_pr ~ n1_r, DISS_do02_full_nooutliers))
+
+summary(lm(Keep_prop_pr ~ S5cdic_bdi_perc, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ S5_SIASSPS, DISS_do02_full_nooutliers))
+
+summary(lm(Keep_prop_pr ~ Reward_bias_20, DISS_do02_full_nooutliers))
+summary(lm(Keep_prop_pr ~ Loss_bias_20, DISS_do02_full_nooutliers))
 ```
 
 #7. Extension of Frontiers paper with peer victimization)
@@ -433,6 +439,19 @@ N=101
 FN & Neuroticism (positively associated)
 FN & Curiosity (negatively associated)
 
+
+# 14. Moderation
+```{r RewP and reward bias interaction}
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5cdic_bdi_perc_z ~ rewp_r_z*Reward_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5cdic_bdi_perc_z ~ rewp_r_z*Loss_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5cdic_bdi_perc_z ~ fn_r_z*Reward_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5cdic_bdi_perc_z ~ fn_r_z*Loss_bias_20_z))))
+
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5_SIASSPS_z ~ rewp_r_z*Reward_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5_SIASSPS_z ~ rewp_r_z*Loss_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5_SIASSPS_z ~ fn_r_z*Reward_bias_20_z))))
+summary(pool(with(data=DISS_do02.imp_z, expr=lm(S5_SIASSPS_z ~ fn_r_z*Loss_bias_20_z))))
+```
 
 # . Closing out
   In this step, go ahead and close out of the file and quit R without saving  

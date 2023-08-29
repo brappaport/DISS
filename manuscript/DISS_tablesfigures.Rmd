@@ -2,6 +2,14 @@
 title             : "Behavioral, neural, and psychiatric correlates of social feedback"
 shorttitle        : "Correlates of social feedback"
 
+header-includes:
+  - \usepackage{setspace}
+  - \AtBeginEnvironment{tabular}{\singlespacing}
+  - \AtBeginEnvironment{lltable}{\singlespacing}
+  - \addtolength{\tabcolsep}{-2pt}
+  - \AtBeginEnvironment{tablenotes}{\doublespacing}
+  - \captionsetup[table]{font={stretch=1.5}}
+  - \captionsetup[figure]{font={stretch=1.5}}
 figsintext        : yes
 floatsintext      : yes
 figurelist        : no
@@ -17,13 +25,13 @@ classoption       : "man"
 output            : papaja::apa6_pdf
 ---
 
-```{r setup, include=FALSE, echo=FALSE, results='hide'}
-knitr::opts_chunk$set(message=FALSE, warning=FALSE)
-    rm(list=ls())     #Remove everything from environment
+```{r setup, include=FALSE}
+rm(list=ls())     #Remove everything from environment
 
-  renv::restore()     #restore environment
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, echo=FALSE, set.seed(314), cache = TRUE)
+
+  # renv::restore()     #restore environment
   library(papaja)     #using apa formatting
-  library(questionr)  #allows lookfor function
   library(broom)      #nice statistical output
   library(here)       #nice file paths
   library(expss)      #labeling variables/values
@@ -38,14 +46,20 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE)
   library(ggpubr)     #make nice graphs
   # library(rempsyc)    #write tables to docx
   library(scipub)
+  library(kableExtra)
+  library(lavaan)     #SEM
+  library(lavaanPlot) #plot SEMs
+  library(semTools)   #extra functions for SEM
+  library(semPlot)    #plot SEMS
+  library(magick)
+  library(ggExtra)
   library(workflowr)  #helps with workflow
 ```
 
-```{r analysis-preferences}
-# Seed for random number generation
-set.seed(314)
-knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```{r}
+here::i_am("manuscript/DISS_tablesfigures.Rmd")
 ```
+
 
 ```{r Load data}
       load(file = "../data/DISS_do01_full.RData")   
@@ -67,6 +81,14 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
       load(file = "../data/DISS_do01.imp_z.RData")
       DISS_do02.imp_z <- DISS_do01.imp_z
       rm("DISS_do01.imp_z")
+
+      load(file = "../data/DISS_do01.imp_n.RData")
+      DISS_do02.imp_n <- DISS_do01.imp_n
+      rm("DISS_do01.imp_n")
+      
+      load(file = "../data/DISS_do01.imp_n_z.RData")
+      DISS_do02.imp_n_z <- DISS_do01.imp_n_z
+      rm("DISS_do01.imp_n_z")
       
       load(file = "../data/DISS_cleaning06_pca.RData")
       DISS_do02_grandaverage <- DISS_cleaning06_pca
@@ -88,7 +110,7 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```{r Make variable lists}
 measures_list <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
 factors_list <- c("sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
-var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
+var_interest_n <- c("rewp_r","fn_r","n1_r","p2_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic")
 var_interest_f <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f")
 var_interest_nocovar <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS")
 ```
@@ -100,18 +122,23 @@ demo_table <- FullTable1(DISS_do02_nooutliers,
            var_names=c("Age","SES (income to need)","Sex","Race","Ethnicity","Recent psychotropic medication use"),
            factor_vars=c("sex_f","PDSIII_Race_f","PDSIII_Hispanic_f","S5psychmed_dos"))
 demo_table$table <- demo_table$table[-4,]
-demo_table$table[,1] <- c("Age", "SES (income to need)", "Sex (female)", "White or Caucasian", "Black or African American", "Multiracial", "Hispanic", "Recent psychotropic medication use")
+demo_table$table[,1] <- c("Age", "SES (income to need)", "Sex (female)", "White or Caucasian", "Black or African American", "Multiracial", "Hispanic", "Recent psychotropic medication use.")
 
 apa_table(as.data.frame(demo_table$table),
           caption="Demographics of study sample",
           note="N=9 missing recent psychotropic medication use. Mean (SD) for continuous variables or N (%) for categorical variables presented.")
 ```
 
-
 ```{r Zero-order correlations, include=FALSE}
-zero_order_cor <- micombine.cor(DISS_do02.imp, variables=c("rewp_r","fn_r",
+DISS_do02_full_nooutliers$Keep_prop_z <- scale(DISS_do02_full_nooutliers$Keep_prop, scale=T, center=T)
+DISS_do02_full_nooutliers$Keep_prop_pr_z <- scale(DISS_do02_full_nooutliers$Keep_prop_pr, scale=T, center=T)
+
+zero_order_cor <- micombine.cor(DISS_do02.imp_n, variables=c("rewp_r","fn_r",
+                                                             "n1_r","p2_r",
                                           "Reward_bias_20","Loss_bias_20",
-                                          "S5cdic_bdi_perc","S5_SIASSPS"), 
+                                          "S5cdic_bdi_perc","S5_SIASSPS",
+                                          "T20age","sex","PDSIII_Race","PDSIII_Hispanic","Income_to_Need","S5psychmed_dos"
+                                          ), 
               conf.level=0.95, method="pearson", nested=FALSE, partial=NULL) %>%
   mutate_if(is.numeric, round, 3)
 
@@ -123,40 +150,58 @@ zero_order_r <- round(attr(zero_order_cor, "r_matrix"),3)
 zero_order_rse <- round(attr(zero_order_cor, "rse_matrix"),3)
 
 # Calculate means and sds across imputations
-DISS_do02.comp <- complete(DISS_do02.imp, "long", include = TRUE) #convert to long format
+DISS_do02.comp <- complete(DISS_do02.imp_n, "long", include = TRUE) #convert to long format
 
 DISS_do02.comp_no0 <- DISS_do02.comp %>% #remove raw, non-imputed dataset
   filter(.imp>0)
-meansd_list <- as.data.frame(matrix(nrow=6, ncol=3)); i=1
-while (i<7) {
-  for (m in var_interest_nocovar) {
+meansd_list <- as.data.frame(matrix(nrow=length(var_interest_n), ncol=3)); i=1
+while (i<9) {
+  for (m in c(var_interest_n,"S5psychmed_dos")) {
     means <- eval(parse(text=paste0("with(DISS_do02.comp_no0, tapply(",m,", .imp, mean))")))
     sds <- eval(parse(text=paste0("with(DISS_do02.comp_no0, tapply(",m,", .imp, sd))")))
-    meansd_list[i,1] <- var_interest_nocovar[i]
+    meansd_list[i,1] <- c(var_interest_n,"S5psychmed_dos")[i]
     meansd_list[i,2] <- mean(means)
     meansd_list[i,3] <- mean(sds)
     i=i+1
   }
   meansd_list[,2:3] <- round(meansd_list[,2:3],2)
 }
-meansd_list[,c("Mean SD")] <- paste0(meansd_list$V2," (",meansd_list$V3,")") 
+meansd_list$`Mean ± SD` <- paste0(meansd_list[,2],' ± ',meansd_list[,3])
+meansd_list <- meansd_list[,-c(2,3)]
+meansd_list[9:14,2] <- c("--","--")
 
 # Make correlation table
-zero_order_matrix <- matrix(NA, nrow=6, ncol=7)
+zero_order_matrix <- matrix(NA, nrow=dim(zero_order_r)[1], ncol=dim(zero_order_r)[2]+1)
 zero_order_matrix[upper.tri(zero_order_matrix)] <- zero_order_r[upper.tri(zero_order_r)]
 zero_order_matrix[lower.tri(zero_order_matrix)] <- zero_order_rse[lower.tri(zero_order_rse)]
-row.names(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety")
-zero_order_matrix[,7] <- meansd_list[,c("Mean SD")]
-colnames(zero_order_matrix) <- c("RewP","FN","Reward Bias","Loss Avoidance", "Depression", "Social Anxiety", "Mean SD")
+row.names(zero_order_matrix) <- c("RewP\\textsubscript{resid}","FN\\textsubscript{resid}",
+                                  "N1\\textsubscript{resid}","P2\\textsubscript{resid}",
+                                  "Reward Bias","Loss Avoidance",
+                                  "Depression", "Social Anxiety",
+                                  "Age", "Sex", "Race", "Hispanic", "SES", "PMU")
+zero_order_matrix[,dim(zero_order_r)[1]+1] <- meansd_list[,c("Mean ± SD")]
+colnames(zero_order_matrix) <- c("RewP\\textsubscript{resid}","FN\\textsubscript{resid}",
+                                 "N1\\textsubscript{resid}","P2\\textsubscript{resid}",
+                                 "Reward Bias","Loss Avoidance",
+                                 "Depression", "Social Anxiety",
+                                 "Age", "Sex", "Race", "Hispanic", "SES", "PMU", "Mean ± SD")
 zero_order_matrix_full <-  as.data.frame(zero_order_matrix) %>%
-  dplyr::select(c("Mean SD"), everything())
+  dplyr::select(c("Mean ± SD"), everything())
 zero_order_matrix_full[is.na(zero_order_matrix_full)] <- "—"
 ```
 
 ```{r}
 apa_table(zero_order_matrix_full, 
           landscape = TRUE, 
-          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while relative standard errors (rse) are presented in the lower diagonal")
+          align = c("p{2.3cm}", "p{2cm}", rep("p{1.1cm}", ncol(zero_order_matrix_full)-2)),
+          font_size="footnotesize",
+          col.names=c("","Mean ± SD","RewP\\textsubscript{resid}","FN\\textsubscript{resid}",
+                      "N1\\textsubscript{resid}","P2\\textsubscript{resid}",
+                      "Reward\nBias","Loss\nAvoidance",
+                      "Depre-\nssion", "Social\nAnxiety",
+                      "Age", "Sex", "Race", "Hispanic", "SES", "PMU"),
+          caption="Correlations between variables of interest", note="Correlations coefficients (r) are presented in the upper diagonal, while relative standard errors (rse) are presented in the lower diagonal. PMU: Psychotropic medication use.",
+          escape=FALSE)
 
 write.csv(zero_order_matrix_full, "../tables/Table2_correlations.csv")
 ```
@@ -187,13 +232,28 @@ mr.fn_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z 
 aim1_table <- DISS_make_table(first_model=mr.rewp_pilt, second_model=mr.fn_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
 ```
 
-```{r}
-# apa_table(aim1_table,
-#           caption="Multiple regressions of RewP/FN and behavioral reward bias and loss avoidance",
-#           col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
-#           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-#           align = c("l", rep("c", 6)),
-#           escape=TRUE)
+```{r Aim 1 factor score, include=FALSE}
+mr.rewpfactor_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewpfactor_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fnfactor_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fnfactor_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim1_table_factor <- DISS_make_table(first_model=mr.rewpfactor_pilt, second_model=mr.fnfactor_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
+```
+
+```{r Aim 1 250-350, include=FALSE}
+mr.rewp250350_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp250350_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn250350_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fn250350_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim1_table_250350 <- DISS_make_table(first_model=mr.rewp250350_pilt, second_model=mr.fn250350_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
+```
+
+```{r Aim 1 275-375, include=FALSE}
+mr.rewp275375_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp275375_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn275375_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(fn275375_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim1_table_275375 <- DISS_make_table(first_model=mr.rewp275375_pilt, second_model=mr.fn275375_pilt, predictors=c("Intercept", "Reward Bias", "Loss Avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
 ```
 
 ```{r Aim 2, include=FALSE}
@@ -204,20 +264,36 @@ mr.fn_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z 
 aim2_table <- DISS_make_table(first_model=mr.rewp_sym, second_model=mr.fn_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
 ```
 
-```{r}
-# apa_table(aim2_table,
-#           caption="Multiple regressions of RewP/FN and depression and social anxiety severity",
-#           col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
-#           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-#           align = c("l", rep("c", 6)))
+```{r Aim 2 factor score, include=FALSE}
+mr.rewpfactor_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(rewpfactor_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fnfactor_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fnfactor_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim2_table_factor <- DISS_make_table(first_model=mr.rewpfactor_sym, second_model=mr.fnfactor_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
+```
+
+```{r Aim 2 250-350, include=FALSE}
+mr.rewp250350_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp250350_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn250350_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fn250350_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim2_table_250350 <- DISS_make_table(first_model=mr.rewp250350_sym, second_model=mr.fn250350_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
+```
+
+```{r Aim 2 275-375, include=FALSE}
+mr.rewp275375_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp275375_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+mr.fn275375_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(fn275375_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
+
+aim2_table_275375 <- DISS_make_table(first_model=mr.rewp275375_sym, second_model=mr.fn275375_sym, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
 ```
 
 ```{r}
 apa_table(
   list(`Reward bias and loss avoidance`=aim1_table, `Psychopathology`=aim2_table),
   merge_method="indent",
-            caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance and psychopathology",
-          col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
+            caption="Multiple regressions of RewP(resid)/FN(resid) predicted by behavioral reward bias and loss avoidance and psychopathology.",
+          col_spanners = list(`Predictors` = c(1),`RewP\\textsubscript{resid}` = c(2,4), `FN\\textsubscript{resid}` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6))
 )
@@ -233,92 +309,10 @@ aim3_table <- DISS_make_table(first_model=mr.piltp_sym, second_model=mr.piltn_sy
 
 ```{r}
 apa_table(aim3_table,
-          caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology",
+          caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology.",
           col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
           col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
           align = c("l", rep("c", 6)))
-```
-
-```{r SEM, include=FALSE}
-library(lavaan)     #SEM
-library(lavaanPlot) #plot SEMs
-library(semTools)   #extra functions for SEM
-library(semPlot)    #plot SEMS
-library(magick)
-
-simple_model <- '
-#Define residual error
-# Reward_bias_20 ~~ Reward_bias_20
-# Loss_bias_20 ~~ Loss_bias_20
-# rewp_r ~~ rewp_r
-# fn_r ~~ fn_r
-# S5cdic_bdi_perc ~~ S5cdic_bdi_perc
-# S5_SIASSPS ~~ S5_SIASSPS
-
-#Define correlations
-Reward_bias_20 ~~ Loss_bias_20
-rewp_r ~~ fn_r
-S5cdic_bdi_perc ~~ S5_SIASSPS
-'
-
-full_model <- '
-#Define correlations
-Reward_bias_20 ~~ Loss_bias_20
-rewp_r ~~ fn_r
-S5cdic_bdi_perc ~~ S5_SIASSPS
-
-#Define hypothesized regressions
-
-#Aim 1
-Reward_bias_20 ~ rewp_r
-Loss_bias_20 ~ fn_r
-
-#Aim 2
-rewp_r ~ S5cdic_bdi_perc
-fn_r ~ S5cdic_bdi_perc
-fn_r ~ S5_SIASSPS
-
-#Aim 3
-Reward_bias_20 ~ S5cdic_bdi_perc
-Loss_bias_20 ~ S5cdic_bdi_perc
-Loss_bias_20 ~ S5_SIASSPS
-'
-
-fit_simple_model <- sem(simple_model, data=DISS_do02_nooutliers, missing="FIML", estimator="MLR")
-fit_full_model <- sem(full_model, data=DISS_do02_nooutliers, missing="FIML", estimator="MLR")
-lavTestLRT(fit_simple_model, fit_full_model)
-
-fitm_simple <- fitmeasures(fit_simple_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
-fitm_full <- fitmeasures(fit_full_model, c("chisq", "df", "pvalue", "cfi", "rmsea", "srmr", "AIC", "BIC"))
-
-# Reward_bias_20 ~~ Reward_bias_20
-# Loss_bias_20 ~~ Loss_bias_20
-# rewp_r ~~ rewp_r
-# fn_r ~~ fn_r
-# S5cdic_bdi_perc ~~ S5cdic_bdi_perc
-# S5_SIASSPS ~~ S5_SIASSPS
-
-# With imputation datasets
-# fit_simple_model_mi <- sem.mi(simple_model, data=DISS_do02.imp_z, estimator="MLR")
-# fit_full_model_mi <- sem.mi(full_model, data=DISS_do02.imp_z, estimator="MLR")
-# lavTestLRT.mi(fit_simple_model_mi, fit_full_model_mi, test="D2", pool.robust=TRUE)
-
-# summary(fit_simple_model_mi)
-# summary(fit_full_model_mi)
-```
-
-```{r}
-fitm <- round(cbind(fitm_simple, fitm_full),2)
-lavtest_full <- lavTestLRT(fit_simple_model, fit_full_model)
-chi_diff <- myround(lavtest_full$`Chisq diff`[2], 2)
-SEM_p <- myround(lavtest_full$`Pr(>Chisq)`[2], 2)
-
-apa_table(fitm,
-          caption="Model fit of SEM model of hypotheses",
-          note=paste0("$\\Delta$ $\\chi^{2}$=",chi_diff,", $p$=",SEM_p),
-          col.names = c("Fit measure","Simplified model","Full model"),
-          align = c("l", rep("c", 2)),
-          escape=FALSE) #make sure escape is set to FALSE to use special characters in the note
 ```
 
 ```{r schematic, fig.cap = "A) Depiction of Island Getaway (IG) ERP task trial and B) schematic of Probabilistic Incentive Learning Task (PILT).", out.width='100%'}
@@ -353,7 +347,7 @@ cz_ga_plot <- ggplot(data=gather(DISS_do02_grandaverage_time[,c("Time","Cz_ga_AC
   scale_color_manual(breaks=c("Cz_ga_ACC","Cz_ga_REJ","Cz_ga_resid"),
                      values=c("Cz_ga_ACC"="green", "Cz_ga_resid"="black", "Cz_ga_REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="") +
+  labs(x=NULL, y="Cz") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-4,11), breaks = seq(-4, 11.5, by = 2)) +
   theme_apa(base_size = 12) + top_theme
@@ -372,7 +366,7 @@ tf2sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf2sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="") +
+  labs(x=NULL, y="FC2") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
   theme_apa(base_size = 12) + top_theme
@@ -391,7 +385,7 @@ tf4sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf4sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x=NULL, y="") +
+  labs(x=NULL, y="Cz") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,10), breaks = seq(-1, 10, by = 2)) +
   theme_apa(base_size = 12) + top_theme
@@ -410,7 +404,7 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
   scale_color_manual(breaks=c("ACC","REJ","resid"),
                      values=c("ACC"="green", "resid"="black", "REJ"="red"), 
                      labels=c("Acceptance","Rejection","Difference"), name=NULL) +
-  labs(x="Time (ms)", y="") +
+  labs(x="Time (ms)", y="Cz") +
   scale_x_continuous(breaks = seq(-200, 800, by = 100)) +
   scale_y_continuous(limits=c(-1,1), breaks = seq(-1, 1, by = .5)) +
   theme(legend.position = "none",
@@ -418,18 +412,18 @@ tf7sf1_ga_plot <- ggplot(data=gather(DISS_do02_tf7sf1_ga[,c("Time","ACC","REJ","
   theme_apa(base_size = 12)
 ```
 
-```{r Facetplots, echo=FALSE, dev='pdf', fig.height=8, fig.width=5, fig.align="center", fig.cap = "ERP waveforms to acceptance and rejection feedback. A) Grand average ERP activity at Cz electrode; B-D: ERP activity at PCA components that significantly different between acceptance and rejection feedback, including B) RewP: temporal factor (TF) 2 and spatial factor (SF) 1 at electrode FC2, C) P2 component: TF 4 and SF 1 at electrode Cz, and D) N1 component: TF 7 and SF 1 at electrode Cz.", out.width='100%'}
+```{r Facetplots, eval=FALSE, echo=FALSE, dev='pdf', out.width='100%'}
 library(tiff)
 library(patchwork)
 
-ACC_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_RewP_Scalp.tif", native = TRUE))
-REJ_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_RewP_Scalp.tif", native = TRUE)) # read in scalp image
+ACC_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_rewp_acc.tif", native = TRUE))
+REJ_RewP_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_rewp_rej.tif", native = TRUE)) # read in scalp image
 
-ACC_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_P2_Scalp.tif", native = TRUE)) # read in scalp image
-REJ_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_P2_Scalp.tif", native = TRUE)) # read in scalp image
+ACC_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_p2_acc.tif", native = TRUE)) # read in scalp image
+REJ_P2_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_p2_rej.tif", native = TRUE)) # read in scalp image
 
-ACC_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/ACC_N1_Scalp.tif", native = TRUE)) # read in scalp image
-REJ_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/REJ_N1_Scalp.tif", native = TRUE)) # read in scalp image
+ACC_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_n1_acc.tif", native = TRUE)) # read in scalp image
+REJ_N1_Scalp <- ggplot() + background_image(readTIFF("../figures/DISS_n1_rej.tif", native = TRUE)) # read in scalp image
 
 tfsf.plots <- ggarrange(cz_ga_plot, tf2sf1_ga_plot, tf4sf1_ga_plot, tf7sf1_ga_plot,
           labels = c("A","B","C","D"),
@@ -454,284 +448,32 @@ tfsf.plots_scalps <- ggarrange(cz_ga_plot, NULL, NULL,
           common.legend = TRUE, legend = "bottom",
           ncol = 3, nrow = 4,
           align="v")
-# tiff("../work/figures/Figure2.tiff", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
+tiff(here("../figures/Figure2.tiff"), width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 png("../figures/Figure2.png", width = 7, height = 10, units="in", res=300); tfsf.plots; dev.off()
 ```
 
-```{r SEMplot1, include=FALSE}
-node_ly <- matrix(c(-0.25, -0.25, 
-               0, -0.25, 
-               -0.25, 0, 
-               0, 0, 
-               -0.25, 0.25, 
-               0, 0.25), ncol = 2, byrow = TRUE)
-
-#extracting the parameters from the sem model and selecting the interactions relevant for the semPaths (here, I need 12 estimates and p-values)
-table2<-parameterEstimates(fit_full_model,standardized=TRUE)  %>%  head(17)
-
-#turning the chosen parameters into text
-b<-gettextf('%.2f (%.2f)', table2$std.all, digits=table2$pvalue)
-
-# Simple model plot
-# simple_model_plot <- semPaths(fit_simple_model, 
-#          style="mx",
-#          intercepts=FALSE,
-#          residual=TRUE,
-#          curve=c(rep(0,8),-2,0,2,rep(0,9)),
-#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-#          edge.color='black',
-#          edgeLabels=NULL,
-#          edge.width=3,
-#          whatLabels="std",
-#          layout = node_ly,
-#          shapeMan="rectangle",
-#          node.height=2,
-#          node.width=2.85,
-#          label.scale=FALSE,
-#          edge.label.cex = 1,
-#          edge.label.position=0.5,
-#          optimizeLatRes=TRUE,
-#          fade=FALSE,
-#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-
-# Plot the theoretical model without results
-theoretical_model_plot <- semPaths(fit_full_model, 
-         style="mx",
-         intercepts=FALSE,
-         residual=TRUE,
-         curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
-         edgeLabels=NULL,
-         edge.width=3,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-plot(theoretical_model_plot)
-
-#Aim 1
-aim1_model <- '
-#Define correlations
-Reward_bias_20 ~~ Loss_bias_20
-rewp_r ~~ fn_r
-S5cdic_bdi_perc ~~ S5_SIASSPS
-
-#Define hypothesized regressions
-
-#Aim 1
-rewp_r ~ 0*Reward_bias_20
-fn_r ~ 0*Loss_bias_20
-
-#Aim 2
-rewp_r ~ 0*S5cdic_bdi_perc
-fn_r ~ 0*S5cdic_bdi_perc
-fn_r ~ 0*S5_SIASSPS
-
-#Aim 3
-Reward_bias_20 ~ 0*S5cdic_bdi_perc
-Loss_bias_20 ~ 0*S5cdic_bdi_perc
-Loss_bias_20 ~ 0*S5_SIASSPS
-'
-
-fit_aim1_model <- sem(aim1_model, data=NULL, missing="FIML", estimator="MLR")
-
-mycol <- adjustcolor("white", alpha.f=0)
-
-# aim1_plot <- semPaths(fit_aim1_model, 
-#          style="mx",
-#          intercepts=FALSE,
-#          residual=TRUE,
-#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-#          edge.color=c(rep('black',3), rep('dark green',2), rep(mycol,3), rep(mycol,3), rep('black',6)),
-#          edgeLabels=NULL,
-#          edge.width=3,
-#          whatLabels="std",
-#          layout = node_ly,
-#          shapeMan="rectangle",
-#          node.height=2,
-#          node.width=2.85,
-#          label.scale=FALSE,
-#          edge.label.cex = 1,
-#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-#          optimizeLatRes=TRUE,
-#          fade=FALSE,
-#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-# png(here('figures/aim1_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim1_plot); dev.off()
-
-#Aim 2
-aim2_model <- '
-#Define correlations
-Reward_bias_20 ~~ Loss_bias_20
-rewp_r ~~ fn_r
-S5cdic_bdi_perc ~~ S5_SIASSPS
-
-#Define hypothesized regressions
-
-#Aim 1
-rewp_r ~ 0*Reward_bias_20
-fn_r ~ 0*Loss_bias_20
-
-#Aim 2
-rewp_r ~ S5cdic_bdi_perc
-fn_r ~ S5cdic_bdi_perc
-fn_r ~ S5_SIASSPS
-
-#Aim 3
-Reward_bias_20 ~ 0*S5cdic_bdi_perc
-Loss_bias_20 ~ 0*S5cdic_bdi_perc
-Loss_bias_20 ~ 0*S5_SIASSPS
-'
-
-fit_aim2_model <- sem(aim2_model, data=NULL, missing="FIML", estimator="MLR")
-
-# aim2_plot <- semPaths(fit_aim2_model, 
-#          style="mx",
-#          intercepts=FALSE,
-#          residual=TRUE,
-#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-#          edge.color=c(rep('black',3), rep(mycol,2), rep(mycol,3), rep('blue',3), rep('black',6)),
-#          edgeLabels=NULL,
-#          edge.width=3,
-#          whatLabels="std",
-#          layout = node_ly,
-#          shapeMan="rectangle",
-#          node.height=2,
-#          node.width=2.85,
-#          label.scale=FALSE,
-#          edge.label.cex = 1,
-#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-#          optimizeLatRes=TRUE,
-#          fade=FALSE,
-#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-# png(here('figures/aim2_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim2_plot); dev.off()
-
-#Aim 3
-aim3_model <- '
-#Define correlations
-Reward_bias_20 ~~ Loss_bias_20
-rewp_r ~~ fn_r
-S5cdic_bdi_perc ~~ S5_SIASSPS
-
-#Define hypothesized regressions
-
-#Aim 1
-rewp_r ~ 0*Reward_bias_20
-fn_r ~ 0*Loss_bias_20
-
-#Aim 2
-rewp_r ~ 0*S5cdic_bdi_perc
-fn_r ~ 0*S5cdic_bdi_perc
-fn_r ~ 0*S5_SIASSPS
-
-#Aim 3
-Reward_bias_20 ~ S5cdic_bdi_perc
-Loss_bias_20 ~ S5cdic_bdi_perc
-Loss_bias_20 ~ S5_SIASSPS
-'
-
-fit_aim3_model <- sem(aim3_model, data=DISS_do02_nooutliers, missing="FIML", estimator="MLR")
-
-# aim3_plot <- semPaths(fit_aim3_model, 
-#          style="mx",
-#          intercepts=FALSE,
-#          residual=TRUE,
-#          curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-#          color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-#          edge.color=c(rep('black',3), rep(mycol,2), rep('red',3), rep(mycol,3), rep('black',6)),
-#          edgeLabels=NULL,
-#          edge.width=3,
-#          whatLabels="std",
-#          layout = node_ly,
-#          shapeMan="rectangle",
-#          node.height=2,
-#          node.width=2.85,
-#          label.scale=FALSE,
-#          edge.label.cex = 1,
-#          edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-#          optimizeLatRes=TRUE,
-#          fade=FALSE,
-#          nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-# png(here('figures/aim3_plot.png'),width = 7, height = 7, units="in", res=300); plot(aim3_plot); dev.off()
-     
-# Plot the model results
-full_model_plot <- semPaths(fit_full_model, 
-         intercepts=FALSE,
-         residual=TRUE,
-         style="mx",
-         # color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         # edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
-         edge.width=3,
-         curve=c(rep(0,5),-2,0,2,rep(0,12)), #20
-         edgeLabels=b,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-
-# Plot the model results (color coordinated for presentation)
-full_model_plot_presentation <- semPaths(fit_full_model, 
-         intercepts=FALSE,
-         residual=TRUE,
-         style="mx",
-         color=c('skyblue','slateblue2','mediumspringgreen','green4','lightsalmon','tomato'),
-         edge.color=c(rep('black',3), rep('dark green',2), rep('blue',3), rep('red',3), rep('black',6)),
-         edge.width=3,
-         curve=c(rep(0,8),-2,0,2,rep(0,9)),
-         edgeLabels=b,
-         whatLabels="std",
-         layout = node_ly,
-         shapeMan="rectangle",
-         node.height=2,
-         node.width=2.85,
-         label.scale=FALSE,
-         edge.label.cex = 1,
-         edge.label.position=c(rep(0.5,8),0.65,0.4,0.65,rep(0.5,3),rep(0.5,6)),
-         optimizeLatRes=TRUE,
-         fade=FALSE,
-         nodeLabels=c("Reward\nbias", "Loss\navoidance", "RewP", "FN", "Depression", "Social\nAnxiety"))
-png(here('figures/full_model_plot'),width = 10, height = 7, units="in", res=300); plot(full_model_plot); dev.off()
-```
-```{r SEMplotprint, fig.cap = "SEM model of all hypotheses.  Note: Values are beta coefficients (p values)", out.width='100%', warning=FALSE}
-plot(full_model_plot)
+```{r, fig.cap = "ERP waveforms to acceptance and rejection feedback and scalp topographies of difference waves. A) Grand average ERP activity at Cz electrode; B-D: ERP activity at PCA components that significantly different between acceptance and rejection feedback, including components consistent with B) RewP/FN: temporal factor (TF) 2 and spatial factor (SF) 1 at electrode FC2, C) P2: TF 4 and SF 1 at electrode Cz, and D) N1: TF 7 and SF 1 at electrode Cz.", out.width='100%'}
+knitr::include_graphics('../figures/Figure2_with_scalps.png')
 ```
 
-```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "Relationship between behavioral loss avoidance and income to needs ratio with histograms", out.width='100%'}
-library(ggExtra)
-
+```{r I2Nplot, echo=FALSE, dev='pdf', fig.height=5, fig.width=7, fig.align="center", fig.cap = "Relationship between behavioral RewP\\textsubscript{resid} and income to needs ratio with histograms", out.width='100%'}
 dep_rewp <- ggplot(DISS_do02_nooutliers, aes(x=S5cdic_bdi_perc, y=rewp_r)) +
   geom_point() +
   stat_smooth(method="lm") +
-  labs(x="Depression severity", y="RewP (residuals)") +
+  labs(x="Depression severity", y=expression("RewP"[resid])) +
   theme_apa(base_size = 20)
 dep_rewp_marg <- ggMarginal(dep_rewp, type="histogram", size=5)
-png(here('figures/rewp_dep_plot.png'),width = 9, height = 7, units="in", res=300); plot(dep_rewp_marg); dev.off()
+png(here('./figures/rewp_dep_plot.png'),width = 9, height = 7, units="in", res=300); plot(dep_rewp_marg); dev.off()
 
 I2N_rewp <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=rewp_r)) +
   geom_point() +
   stat_smooth(method="lm") +
-  labs(x="Income to needs ratio", y="RewP (residuals)") +
+  labs(x="Income to needs ratio", y=expression("RewP"[resid])) +
   theme_apa(base_size = 20)
 
 I2N_rewp_marg <- ggMarginal(I2N_rewp, type="histogram", size=5)
 I2N_rewp_marg
-png(here('figures/rewp_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_rewp_marg); dev.off()
+png(here('./figures/rewp_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_rewp_marg); dev.off()
 
 I2N_loss <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Loss_bias_20)) +
   geom_point() +
@@ -740,8 +482,8 @@ I2N_loss <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Loss_bias_20)) 
   theme_apa(base_size = 20)
 
 I2N_loss_marg <- ggMarginal(I2N_loss, type="histogram", size=5)
-I2N_loss_marg
-png(here('figures/loss_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_loss_marg); dev.off()
+# I2N_loss_marg
+# png(here('../figures/loss_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_loss_marg); dev.off()
 
 I2N_reward <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Reward_bias_20)) +
   geom_point() +
@@ -750,134 +492,8 @@ I2N_reward <- ggplot(DISS_do02_nooutliers, aes(x=Income_to_Need, y=Reward_bias_2
   theme_apa(base_size = 20)
 
 I2N_reward_marg <- ggMarginal(I2N_reward, type="histogram", size=5)
-png(here('figures/reward_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_reward_marg); dev.off()
+# I2N_reward_marg
+# png(here('../figures/reward_I2N_plot.png'),width = 9, height = 7, units="in", res=300); plot(I2N_reward_marg); dev.off()
 ```
 
-```{r PCA factors}
-pca_factors <- read.csv(here("data/PCA_factors_full_corrected.csv"))
-```
-```{r PCA factors table, results="asis"}
-apa_table(pca_factors,
-          col.names=c("Temporospatial \\\\ factor combination",
-                      "Unique variance explained",
-                      "Temporal loading peak (ms)",
-                      "Peak electrode",
-                      "Accept vs Reject t value)"),
-          caption="Temporospatial factors that differed between social acceptance and rejection feedback",
-          note="t values derived from robust ANOVA; TF = temporal factor; SF = spatial factor.",
-          align=c('l',rep('c',4)),
-          escape=FALSE,
-          landscape=TRUE)
-```
-
-```{r Psychotropic meds supplementary analysis}
-# Aim 1
-mr.rewp_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-mr.fn_pilt_med <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-
-aim1_table_med <- DISS_make_table(first_model=mr.rewp_pilt_med, second_model=mr.fn_pilt_med, predictors=c("Intercept", "Reward bias", "Loss avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"), round_digits=2)
-
-# Aim 2
-mr.rewp_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-mr.fn_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(fn_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-
-aim2_table_med <- DISS_make_table(first_model=mr.rewp_sym_med, second_model=mr.fn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"), round_digits=2)
-
-# Aim 3
-mr.piltp_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-mr.piltn_sym_med <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-
-aim3_table_med <- DISS_make_table(first_model=mr.piltp_sym_med, second_model=mr.piltn_sym_med, predictors=c("Intercept", "Depression", "Social Anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"), round_digits=2)
-```
-
-```{r}
-apa_table(
-  list(`Reward bias and loss avoidance`=aim1_table_med, `Psychopathology`=aim2_table_med),
-  merge_method="indent",
-            caption="Multiple regressions of RewP/FN predicted by behavioral reward bias and loss avoidance and psychopathology covarying for recent psychotropic medication use",
-          col_spanners = list(`Predictors` = c(1),`RewP` = c(2,4), `FN` = c(5,7)),
-          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-          align = c("l", rep("c", 6))
-)
-
-apa_table(aim3_table_med,
-          caption="Multiple regressions of Reward bias/loss avoidance predicted by psychopathology covarying for recent psychotropic medication use",
-          col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
-          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-          align = c("l", rep("c", 6)))
-```
-
-```{r I2N with discriminability}
-mr.rb_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Reward_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-
-mr.la_i2n_disc <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + PILTP_Disc_20 + PILTN_Disc_20 + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z + S5psychmed_dos_f)))
-
-I2N_table_disc <- DISS_make_table(first_model=mr.rb_i2n_disc, second_model=mr.la_i2n_disc, predictors=c("Intercept", "Depression", "Social Anxiety", "PILT-P Accuracy", "PILT-N Accuracy","Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES", "Psychotropic medication use"), round_digits=2)
-```
-
-```{r}
-apa_table(I2N_table_disc,
-          caption="Multiple regressions of behavioral reward bias and loss avoidance covarying for accuracy",
-          col_spanners = list(`Predictors` = c(1),`Reward bias` = c(2,4), `Loss avoidance` = c(5,7)),
-          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-          align = c("l", rep("c", 6)),
-          escape=TRUE)
-```
-
-```{r Other ERP components}
-mr.p2_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(p2_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-mr.n1_pilt <- pool(with(data=DISS_do02.imp_z, expr=lm(n1_r_z ~ Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-
-mr.p2_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(p2_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-mr.n1_sym <- pool(with(data=DISS_do02.imp_z, expr=lm(n1_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + T20age_z + sex_f + PDSIII_Race_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-
-aim1_table_p2n1 <- DISS_make_table(first_model=mr.p2_pilt, second_model=mr.n1_pilt, predictors=c("Intercept", "Reward bias", "Loss avoidance", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
-aim2_table_p2n1 <- DISS_make_table(first_model=mr.p2_sym, second_model=mr.n1_sym, predictors=c("Intercept", "Depression", "Social anxiety", "Age", "Sex", "Black or AA", "Multiracial", "Hispanic", "SES"), round_digits=2)
-```
-
-```{r}
-apa_table(
-  list(`Reward bias and loss avoidance`=aim1_table_p2n1, `Psychopathology`=aim2_table_p2n1),
-  merge_method="indent",
-            caption="Multiple regressions of P2/N1 predicted by behavioral reward bias and loss avoidance and psychopathology",
-          col_spanners = list(`Predictors` = c(1),`P2` = c(2,4), `N1` = c(5,7)),
-          col.names = c(" ", rep(c("$\\beta$", "CI", "$p$"), times = 2)),
-          align = c("l", rep("c", 6))
-)
-```
-
-
-```{r}
-mr.rewp_ci_norace <- pool(with(data=DISS_do02.imp_z, expr=lm(rewp_r_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + Reward_bias_20_z + Loss_bias_20_z + T20age_z + sex_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-mr.rewp_norace <- DISS_make_table(first_model = mr.rewp_ci_norace, second_model = mr.rewp_ci_norace, predictors=c("Intercept", "Depression", "Social Anxiety", "Reward bias", "Loss avoidance", "Age", "Sex", "Hispanic", "SES"), round_digits = 2)
-
-write.csv(mr.rewp_norace, here("../-presentations/SANS_2021/ses_rewp_table.csv"))
-
-mr.pilt_ci_norace <- pool(with(data=DISS_do02.imp_z, expr=lm(Loss_bias_20_z ~ S5cdic_bdi_perc_z + S5_SIASSPS_z + Reward_bias_20_z + T20age_z + sex_f + PDSIII_Hispanic_f + Income_to_Need_z)))
-mr.pilt_norace <- DISS_make_table(first_model = mr.pilt_ci_norace, second_model = mr.pilt_ci_norace, predictors=c("Intercept", "Depression", "Social Anxiety", "Reward bias", "Age", "Sex", "Hispanic", "SES"), round_digits = 2)
-
-write.csv(mr.pilt_norace, here("../-presentations/SANS_2021/ses_pilt_table.csv"))
-
-
-cz_ga_plot_short <- cz_ga_plot +
-  geom_line(size=2) +
-  scale_x_continuous(breaks = seq(-200, 800, by = 200)) + 
-  labs(title="Grand average", x="Time (ms)", y="Average Cz activity (µV)") +
-  theme_apa(base_size = 35)
-tf2sf1_ga_plot_short <- tf2sf1_ga_plot + 
-  geom_line(size=2) +
-  # geom_rect(aes(xmin=294, xmax=394, ymin=-1, ymax=9), color="red", fill=NA, size=2) +
-  scale_x_continuous(breaks = seq(-200, 800, by = 200)) +
-  labs(title="RewP/FN PCA factor" ,x="Time (ms)", y="Average FC2 activity (µV)") +
-  theme_apa(base_size = 35)
-
-tfsf.plots_short <- ggarrange(cz_ga_plot_short, tf2sf1_ga_plot_short, 
-          label.x = c(rep(.04,2)),
-          label.y = c(rep(1,2)),
-          common.legend = TRUE, legend = "top",
-          ncol = 2, nrow = 1,
-          align="v")
-
-png(here("../-presentations/SANS_2021/ERP_for_poster1.png"), width = 20, height = 8, units="in", res=300); tfsf.plots_short; dev.off()
-```
 

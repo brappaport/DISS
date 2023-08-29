@@ -53,9 +53,9 @@ renv::restore()
 ## 1.5 Load Data
 Remember to immediately rename and remove. Avoid overwriting old data.
 ```{r}
-    CRUNCH <- expss::read_spss("../../CRUNCH/PDS_III_S5_crunched_01_27_21.sav")
+    CRUNCH <- expss::read_spss(here("../../CRUNCH/PDS_III_S5_crunched_01_27_21.sav"))
     
-    SIAS_SPS <- expss::read_spss("../_rawdata/R01 PDS-III Imaging T20 SIAS-6 SPS-6 (1 6 20).sav")
+    SIAS_SPS <- expss::read_spss(here("../_rawdata/R01 PDS-III Imaging T20 SIAS-6 SPS-6 (1 6 20).sav"))
     sias_sps <- SIAS_SPS %>%
       select("Subid", starts_with("T20sias"))
     

@@ -26,7 +26,7 @@ These are the primary analyses for Brent Rappaport's doctoral dissertation thesi
 
 ## 1.2. Load Libraries
 ```{r echo=TRUE, results='hide', message=FALSE}
-  renv::restore()     #restore environment
+  # renv::restore()     #restore environment
   library(knitr)      #allows rmarkdown files
   library(broom)      #nice statistical output
   library(here)       #nice file paths
@@ -66,7 +66,7 @@ Remember to immediately rename and remove. Avoid overwriting old data.
 ## 1.6. Subset data
 ```{r}
 # List of variables to include in subsetted data
-all_measures_list <- c("rewp_r","fn_r",
+all_measures_list <- c("rewp_r","fn_r","rewpfactor_r","fnfactor_r","rewp275375_r","rewp250350_r","fn275375_r","fn250350_r",
                        "Reward_bias_20","Loss_bias_20",
                        "S5cdic_bdi_perc","S5_SIASSPS",
                        "T20age","Income_to_Need","sex_f","PDSIII_Race_f","PDSIII_Hispanic_f",
@@ -74,7 +74,7 @@ all_measures_list <- c("rewp_r","fn_r",
                        "PILTP_Disc_20","PILTN_Disc_20",
                        "S5BAS_C_drive","S5BAS_C_funseek2","S5BAS_C_reward_revised2","S5BIS_C_revised","S5PSCtotal",
                        "S5ListSort_AgeAdjustedSS","S5PatComp_AgeAdjustedSS","S5PictSeq_AgeAdjustedSS","S5PictVocab_AgeAdjustedSS","S5Flanker_AgeAdjustedSS")
-all_measures_list_n <- c("rewp_r","fn_r",
+all_measures_list_n <- c("rewp_r","fn_r","rewpfactor_r","fnfactor_r","rewp275375_r","rewp250350_r","fn275375_r","fn250350_r",
                        "Reward_bias_20","Loss_bias_20",
                        "S5cdic_bdi_perc","S5_SIASSPS",
                        "T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic",
@@ -84,7 +84,7 @@ all_measures_list_n <- c("rewp_r","fn_r",
                        "S5ListSort_AgeAdjustedSS","S5PatComp_AgeAdjustedSS","S5PictSeq_AgeAdjustedSS","S5PictVocab_AgeAdjustedSS","S5Flanker_AgeAdjustedSS")
 
 # Measures of interest
-measures_list <- c("rewp_r","fn_r","p2_r","n1_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
+measures_list <- c("rewp_r","fn_r","rewpfactor_r","fnfactor_r","rewp275375_r","rewp250350_r","fn275375_r","fn250350_r","p2_r","n1_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need")
 
 # Make lists to be used below
 var_interest_n <- c("rewp_r","fn_r","Reward_bias_20","Loss_bias_20","S5cdic_bdi_perc","S5_SIASSPS","T20age","Income_to_Need","sex","PDSIII_Race","PDSIII_Hispanic","S5psychmed_dos")
@@ -176,6 +176,18 @@ DISS_do01.imp <- mice(MI_data, predictorMatrix=pred, method=meth, m=10, seed=314
 summary(DISS_do01.imp)
 
 DISS_do01.comp <- complete(DISS_do01.imp, "long", include = TRUE)
+
+MI_data_n <- DISS_do01_nooutliers[,c(all_measures_list_n, "S5psychmed_dos")]
+m0 <- mice(MI_data_n, maxit=0)
+meth <- m0$method
+meth[names(meth) %in% c("S5psychmed_dos")] <- ""
+pred <- m0$predictorMatrix
+pred[, colnames(pred) %in% c("S5psychmed_dos")] <- 0
+DISS_do01.imp_n <- mice(MI_data_n, predictorMatrix=pred, method=meth, m=10, seed=314)
+
+summary(DISS_do01.imp_n)
+
+DISS_do01.comp_n <- complete(DISS_do01.imp_n, "long", include = TRUE)
 ```
 
 ## 4.2.1. Check imputed values (line indicates mean)
@@ -211,10 +223,14 @@ Center and standardize all measures to make b estimates from multiple regression
 ```{r}
 #convert into datlist
 DISS_do01.dat <- miceadds::mids2datlist(DISS_do01.imp)
+DISS_do01.dat_n <- miceadds::mids2datlist(DISS_do01.imp_n)
 #scale/standardize datlist
+library(TAM)
 DISS_do01.dat_z <- scale_datlist(datlist=DISS_do01.dat, orig_var=measures_list, trafo_var=paste0(measures_list,"_z"), weights=NULL, M=0, SD=1, digits=NULL)
+DISS_do01.dat_n_z <- scale_datlist(datlist=DISS_do01.dat_n, orig_var=measures_list, trafo_var=paste0(measures_list,"_z"), weights=NULL, M=0, SD=1, digits=NULL)
 #convert back to mids
 DISS_do01.imp_z <- miceadds::datlist2mids(DISS_do01.dat_z)
+DISS_do01.imp_n_z <- miceadds::datlist2mids(DISS_do01.dat_n_z)
 
 #standardize measures in non-imputed dataset
 for (m in measures_list){
@@ -238,14 +254,16 @@ save(DISS_do01_full_nooutliers, file="./data/DISS_do01_full.RData")
 save(DISS_do01_nooutliers, file="./data/DISS_do01_nooutliers.RData")
 #save imputed dataset(s)
 save(DISS_do01.imp, file="./data/DISS_do01.imp.RData")
+save(DISS_do01.imp_n, file="./data/DISS_do01.imp_n.RData")
 #save standardized imputed dataset(s)
 save(DISS_do01.imp_z, file="./data/DISS_do01.imp_z.RData")
+save(DISS_do01.imp_n_z, file="./data/DISS_do01.imp_n_z.RData")
 ```
 
 # 8. Closing out
   In this step, go ahead and close out of the file and quit R without saving  
   the work space.
 ```{r}
-   renv::snapshot()   #Take a snapshot of environment
+   # renv::snapshot()   #Take a snapshot of environment
 ```
 

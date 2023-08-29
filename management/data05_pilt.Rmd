@@ -26,7 +26,7 @@ In addition to an overall measure of reward bias and loss avoidance in each of t
 
 ## 1.2. Load Libraries
 ```{r echo=TRUE, results='hide', message=FALSE}
-  renv::restore()     #restore environment
+  # renv::restore()     #restore environment
   library(knitr)      #allows rmarkdown files
   library(haven)      #helps import stata
   library(questionr)  #allows lookfor function
@@ -353,12 +353,6 @@ splithalf_n <- piltn_data_cleaned %>%
   pivot_wider(names_from=ind, values_from=(c("Rich_Correct_20","Rich_Incorrect_20","Lean_Correct_20","Lean_Incorrect_20"))) %>%
   mutate(Loss_bias_20_1 = log((Rich_Correct_20_1*Lean_Incorrect_20_1)/(Rich_Incorrect_20_1*Lean_Correct_20_1))*.5,
          Loss_bias_20_2 = log((Rich_Correct_20_2*Lean_Incorrect_20_2)/(Rich_Incorrect_20_2*Lean_Correct_20_2))*.5,)
-
-library(CTT)
-icc_rewardbias <- irr::icc(splithalf_p[,c("Reward_bias_20_1", "Reward_bias_20_2")], model="oneway", unit="single", r0=0)
-icc_lossbias <- irr::icc(splithalf_n[,c("Loss_bias_20_1", "Loss_bias_20_2")], model="oneway", unit="single", r0=0)
-spearman.brown(as.numeric(icc_rewardbias[7]))
-spearman.brown(as.numeric(icc_lossbias[7]))
 ```
 
 # 5. Merge data
@@ -370,6 +364,8 @@ DISS_cleaning05_pilt <- full_join(CLEAN_piltp_data, CLEAN_piltn_data, by="Subid"
 # 6. Save Data
 ```{r}
 save(DISS_cleaning05_pilt, file="./data/DISS_cleaning05_pilt.RData")
+
+save(splithalf_p, splithalf_n, file="./data/DISS_splithalf_pilt.RData")
 
 sum(!is.na(DISS_cleaning05_pilt$Reward_bias_20))
 sum(!is.na(DISS_cleaning05_pilt$Loss_bias_20))

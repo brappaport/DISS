@@ -26,7 +26,7 @@ Preprocessing of ERP/EEG data was completed in Brain Vision Analyzer and time wi
 
 ## 1.2. Load Libraries
 ```{r echo=TRUE, results='hide', message=FALSE}
-  renv::restore()     #restore environment
+  # renv::restore()     #restore environment
   library(knitr)      #allows rmarkdown files
   library(haven)      #helps import stata
   library(questionr)  #allows lookfor function
@@ -95,16 +95,16 @@ DISS_cleaning_tw_time <- DISS_cleaning06_pca %>%
 
 DISS_cleaning_tw_components <- DISS_cleaning_tw_time %>%
   group_by(Subid, Condition) %>%
-  summarize(rewp = mean(FC2[between(Time,294,394)]),
-            rewp275375 = mean(Cz[between(Time,275,375)]),
-            rewp250350 = mean(Cz[between(Time,250,350)]),
+  summarize(tw_pca = mean(FC2[between(Time,294,394)]),
+            tw275375 = mean(Cz[between(Time,275,375)]),
+            tw250350 = mean(Cz[between(Time,250,350)]),
             p2 = mean(Cz[between(Time,162,262)]),
             n1 = mean(Cz[between(Time,124,224)]))
 ```
 
 ## 2.1 Check differences between conditions using t-test
 ```{r}
-rewp_ttest <- t.test(DISS_cleaning_tw_components$rewp ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
+rewp_ttest <- t.test(DISS_cleaning_tw_components$tw_pca ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
 p2_ttest <- t.test(DISS_cleaning_tw_components$p2 ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
 n1_ttest <- t.test(DISS_cleaning_tw_components$n1 ~ DISS_cleaning_tw_components$Condition, paired=TRUE)[1:3]
 
@@ -116,17 +116,32 @@ p.adjust(c(rewp_ttest[3],p2_ttest[3],n1_ttest[3]), "fdr")
 ```{r}
 #Make data into wide format
 DISS_cleaning_tw_components_wide <- DISS_cleaning_tw_components %>%
-  pivot_wider(id_cols=Subid, names_from=Condition, values_from=c(rewp,rewp275375,rewp250350,p2,n1))
+  pivot_wider(id_cols=Subid, names_from=Condition, values_from=c(tw_pca,tw275375,tw250350,p2,n1))
 
-component_list <- c("rewp","rewp275375","rewp250350","p2")
+component_list <- c("tw_pca","tw275375","tw250350","p2")
 
-for (c in component_list){ 
-    eval(parse(text=paste0("DISS_cleaning_tw_components_wide$",c,"_r <- stdres(lm(",c,"_ACC ~ ",c,"_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))"))) 
-}
+DISS_cleaning_tw_components_wide$rewp_r <- stdres(lm(tw_pca_ACC ~ tw_pca_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$rewp275375_r <- stdres(lm(tw275375_ACC ~ tw275375_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$rewp250350_r <- stdres(lm(tw250350_ACC ~ tw250350_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))
 
-DISS_cleaning_tw_components_wide$fn_r <- -1*stdres(lm(rewp_REJ ~ rewp_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
-DISS_cleaning_tw_components_wide$n1_r <- -1*stdres(lm(n1_REJ ~ n1_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$fn_r <- stdres(lm(tw_pca_REJ ~ tw_pca_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$fn275375_r <- stdres(lm(tw275375_REJ ~ tw275375_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+DISS_cleaning_tw_components_wide$fn250350_r <- stdres(lm(tw250350_REJ ~ tw250350_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+
+DISS_cleaning_tw_components_wide$p2_r <- stdres(lm(p2_ACC ~ p2_REJ, DISS_cleaning_tw_components_wide, na.action=na.exclude))
+
+DISS_cleaning_tw_components_wide$n1_r <- stdres(lm(n1_REJ ~ n1_ACC, DISS_cleaning_tw_components_wide, na.action=na.exclude))
 DISS_cleaning06_tw <- DISS_cleaning_tw_components_wide
+```
+
+## 3.1 PCA factor weighted score
+```{r}
+factor_erp <- read.csv(here("./data/erp_factor_score_fc2.csv"))
+
+factor_erp$rewpfactor_r <- stdres(lm(ACC ~ REJ, factor_erp, na.action=na.exclude))
+factor_erp$fnfactor_r <- stdres(lm(REJ ~ ACC, factor_erp, na.action=na.exclude))
+
+DISS_cleaning06_tw <- merge(DISS_cleaning06_tw, factor_erp, by="Subid")
 ```
 
 # 4. Clean significant PCA components
